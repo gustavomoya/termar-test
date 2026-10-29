@@ -1,0 +1,191 @@
+// GENERATED FILE — do not edit.
+// Mirror of ../data/seed.json, inlined so the mockup works over file://
+// Regenerate with: node tools/sync-seed.js
+window.SEED = {
+  "meta": {
+    "product": "Termar Servicios — field worksheet",
+    "technician": { "id": "tech-14", "name": "Ángel Sarasa", "van": "VAN-14" },
+    "day": "2026-06-30",
+    "note": "One technician's day. Timestamps are local time, which is the only clock available underground."
+  },
+
+  "jobs": [
+    {
+      "id": "job-88214",
+      "reference": "TS-88214",
+      "scheduledAt": "2026-06-30T09:00:00",
+      "estimatedMinutes": 90,
+      "priority": "normal",
+      "status": "synced",
+      "plantType": "gas_boiler",
+      "site": {
+        "name": "Residencial Montearagón",
+        "address": "C/ Bellavista 14, boiler room B-2",
+        "access": "Key from concierge. Boiler room is two floors down, no signal.",
+        "contact": "Marisol Cea",
+        "phone": "+34 976 552 118"
+      },
+      "task": "Annual service, 2 × Ferroli 240 kW",
+      "localOnly": false,
+      "syncedAt": "2026-06-30T11:42:00"
+    },
+    {
+      "id": "job-88219",
+      "reference": "TS-88219",
+      "scheduledAt": "2026-06-30T11:30:00",
+      "estimatedMinutes": 120,
+      "priority": "high",
+      "status": "queued",
+      "plantType": "chiller",
+      "site": {
+        "name": "Hospital Comarcal — plant room",
+        "address": "Av. Ríos 8, roof level 6",
+        "access": "Sign in at reception. Plant room is a metal enclosure — no signal inside.",
+        "contact": "Dr. Núria Palau",
+        "phone": "+34 976 118 400"
+      },
+      "task": "Chiller 2 running warm, investigate and report",
+      "localOnly": true,
+      "queuedItems": 4
+    },
+    {
+      "id": "job-88223",
+      "reference": "TS-88223",
+      "scheduledAt": "2026-06-30T14:00:00",
+      "estimatedMinutes": 60,
+      "priority": "normal",
+      "status": "conflict",
+      "plantType": "gas_boiler",
+      "site": {
+        "name": "Colegio Santa Ana",
+        "address": "C/ Vicente Rojo 3, basement",
+        "access": "Caretaker opens until 15:00.",
+        "contact": "Quim Bardají",
+        "phone": "+34 976 300 921"
+      },
+      "task": "Pressure loss reported, second visit",
+      "localOnly": true,
+      "conflictWith": { "technician": "Berta Aína", "completedAt": "2026-06-30T15:12:00" }
+    },
+    {
+      "id": "job-88231",
+      "reference": "TS-88231",
+      "scheduledAt": "2026-06-30T16:00:00",
+      "estimatedMinutes": 45,
+      "priority": "normal",
+      "status": "pending",
+      "plantType": "chiller",
+      "site": {
+        "name": "Nave Industrial Vallcarca",
+        "address": "Pol. Ind. El Puente, nave 12",
+        "access": "Gate code 4471. Unit is on the roof, ladder access.",
+        "contact": "Ismael Rovira",
+        "phone": "+34 976 771 205"
+      },
+      "task": "Filter change and coil clean",
+      "localOnly": false
+    },
+    {
+      "id": "job-88240",
+      "reference": "TS-88240",
+      "scheduledAt": "2026-06-30T17:30:00",
+      "estimatedMinutes": 30,
+      "priority": "low",
+      "status": "pending",
+      "plantType": "gas_boiler",
+      "site": {
+        "name": "Oficinas Delgado y Rueda",
+        "address": "Pza. del Carmen 2, 4ª planta",
+        "access": "Office closes at 18:30.",
+        "contact": "Pilar Rueda",
+        "phone": "+34 976 224 037"
+      },
+      "task": "Thermostat replacement",
+      "localOnly": false
+    }
+  ],
+
+  "checklistTemplates": {
+    "gas_boiler": {
+      "label": "Gas boiler — annual service",
+      "items": [
+        { "id": "gb-01", "label": "Flue integrity and termination", "type": "passfail" },
+        { "id": "gb-02", "label": "Gas tightness test", "type": "passfail" },
+        { "id": "gb-03", "label": "Burner pressure", "type": "measure", "unit": "mbar", "min": 15, "max": 25 },
+        { "id": "gb-04", "label": "Flue gas CO₂", "type": "measure", "unit": "%", "min": 8, "max": 12 },
+        { "id": "gb-05", "label": "Flue gas temperature", "type": "measure", "unit": "°C", "min": 90, "max": 200 },
+        { "id": "gb-06", "label": "Combustion chamber condition", "type": "passfail" },
+        { "id": "gb-07", "label": "Heat exchanger cleaned", "type": "passfail" },
+        { "id": "gb-08", "label": "Expansion vessel pressure", "type": "measure", "unit": "bar", "min": 0.8, "max": 1.5 },
+        { "id": "gb-09", "label": "Safety valve operation", "type": "passfail" },
+        { "id": "gb-10", "label": "Condensate trap and drain", "type": "passfail" },
+        { "id": "gb-11", "label": "Ignition and flame sensing", "type": "passfail" },
+        { "id": "gb-12", "label": "Controls and thermostat operation", "type": "passfail" },
+        { "id": "gb-13", "label": "Ventilation openings clear", "type": "passfail" },
+        { "id": "gb-14", "label": "Gas leak detector reading", "type": "passfail" }
+      ]
+    },
+    "chiller": {
+      "label": "Chiller — service and inspection",
+      "items": [
+        { "id": "ch-01", "label": "Condenser coil condition", "type": "passfail" },
+        { "id": "ch-02", "label": "Refrigerant suction pressure", "type": "measure", "unit": "bar", "min": 3.5, "max": 6.5 },
+        { "id": "ch-03", "label": "Refrigerant discharge pressure", "type": "measure", "unit": "bar", "min": 12, "max": 20 },
+        { "id": "ch-04", "label": "Superheat", "type": "measure", "unit": "K", "min": 4, "max": 10 },
+        { "id": "ch-05", "label": "Compressor running current", "type": "passfail" },
+        { "id": "ch-06", "label": "Fan operation and bearings", "type": "passfail" },
+        { "id": "ch-07", "label": "Water flow and strainer", "type": "passfail" },
+        { "id": "ch-08", "label": "Controls and safety interlocks", "type": "passfail" },
+        { "id": "ch-09", "label": "Insulation and pipework condition", "type": "passfail" }
+      ]
+    }
+  },
+
+  "vanStock": [
+    { "sku": "FLT-2040", "label": "Panel filter 20×40", "unit": "each", "onVan": 12 },
+    { "sku": "SEA-0912", "label": "Burner gasket set", "unit": "set", "onVan": 4 },
+    { "sku": "VLV-3300", "label": "Safety valve 3 bar", "unit": "each", "onVan": 2 },
+    { "sku": "THR-1180", "label": "Room thermostat, wired", "unit": "each", "onVan": 3 },
+    { "sku": "CND-0450", "label": "Condensate trap", "unit": "each", "onVan": 5 },
+    { "sku": "REF-R32", "label": "Refrigerant R32", "unit": "kg", "onVan": 6.4 },
+    { "sku": "CLN-0100", "label": "Coil cleaner", "unit": "litre", "onVan": 9 },
+    { "sku": "IGN-2201", "label": "Ignition electrode", "unit": "each", "onVan": 6 }
+  ],
+
+  "sampleWorksheet": {
+    "jobId": "job-88219",
+    "startedAt": "2026-06-30T11:38:00",
+    "stoppedAt": "2026-06-30T13:51:00",
+    "checks": [
+      { "id": "ch-01", "result": "pass" },
+      { "id": "ch-02", "result": "measure", "value": 4.8 },
+      { "id": "ch-03", "result": "measure", "value": 21.4, "note": "Above range. Condenser fouled, cleaned and retested at 18.2." },
+      { "id": "ch-04", "result": "measure", "value": 7.1 },
+      { "id": "ch-05", "result": "pass" },
+      { "id": "ch-06", "result": "fail", "note": "Fan 2 bearing noisy under load. Replacement quoted separately." },
+      { "id": "ch-07", "result": "pass" },
+      { "id": "ch-08", "result": "pass" },
+      { "id": "ch-09", "result": "na", "note": "Insulation replaced last visit, not due." }
+    ],
+    "parts": [
+      { "sku": "CLN-0100", "quantity": 2 },
+      { "sku": "FLT-2040", "quantity": 4 }
+    ],
+    "photos": [
+      { "id": "ph-1", "caption": "Condenser coil before cleaning", "capturedAt": "2026-06-30T12:04:00", "uploaded": false },
+      { "id": "ph-2", "caption": "Condenser coil after cleaning", "capturedAt": "2026-06-30T13:22:00", "uploaded": false },
+      { "id": "ph-3", "caption": "Fan 2 bearing housing", "capturedAt": "2026-06-30T13:40:00", "uploaded": false }
+    ],
+    "signature": { "signedBy": "Núria Palau", "signedAt": "2026-06-30T13:50:00", "captured": true }
+  },
+
+  "syncQueue": [
+    { "id": "q-1", "jobRef": "TS-88219", "kind": "worksheet", "label": "Checklist, 9 items", "sizeKb": 4, "attempts": 3, "state": "pending" },
+    { "id": "q-2", "jobRef": "TS-88219", "kind": "photo", "label": "Condenser coil before cleaning", "sizeKb": 2180, "attempts": 3, "state": "pending" },
+    { "id": "q-3", "jobRef": "TS-88219", "kind": "photo", "label": "Condenser coil after cleaning", "sizeKb": 1940, "attempts": 3, "state": "pending" },
+    { "id": "q-4", "jobRef": "TS-88219", "kind": "signature", "label": "Signed by Núria Palau", "sizeKb": 38, "attempts": 3, "state": "pending" },
+    { "id": "q-5", "jobRef": "TS-88223", "kind": "worksheet", "label": "Checklist, 14 items", "sizeKb": 6, "attempts": 5, "state": "conflict" },
+    { "id": "q-6", "jobRef": "TS-88214", "kind": "worksheet", "label": "Checklist, 14 items", "sizeKb": 6, "attempts": 1, "state": "sent" },
+    { "id": "q-7", "jobRef": "TS-88214", "kind": "signature", "label": "Signed by Marisol Cea", "sizeKb": 34, "attempts": 1, "state": "sent" }
+  ]
+};

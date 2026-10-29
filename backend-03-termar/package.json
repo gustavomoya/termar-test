@@ -1,0 +1,10 @@
+{
+  "name": "termar-field-worksheet-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tiny in-memory backend for the Termar field-worksheet frontend exercise. No dependencies, no database.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

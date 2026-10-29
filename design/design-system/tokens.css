@@ -1,0 +1,119 @@
+/* ==========================================================================
+   Design tokens — shared by every mockup in this repository.
+   Single source of truth for colour, type, spacing, radii and elevation.
+   Mockups must consume these variables rather than hard-coding values.
+   ========================================================================== */
+
+:root {
+  /* ---- Neutrals ------------------------------------------------------- */
+  --c-bg: #f6f7f9;
+  --c-surface: #ffffff;
+  --c-surface-sunken: #f0f2f5;
+  --c-surface-hover: #f7f8fa;
+  --c-border: #e2e5ea;
+  --c-border-strong: #c9ced6;
+
+  --c-text: #16191d;
+  --c-text-secondary: #5b636e;
+  --c-text-muted: #8b939f;
+  --c-text-inverse: #ffffff;
+
+  /* ---- Brand ---------------------------------------------------------- */
+  --c-primary: #2f5bea;
+  --c-primary-hover: #2549c4;
+  --c-primary-soft: #e8edfd;
+  --c-primary-border: #bfcdf8;
+
+  /* ---- Status --------------------------------------------------------- */
+  --c-success: #0f7b52;
+  --c-success-soft: #e2f4ec;
+  --c-success-border: #b3e0cd;
+
+  --c-warning: #9a6206;
+  --c-warning-soft: #fdf1dd;
+  --c-warning-border: #f0d5a3;
+
+  --c-danger: #c02626;
+  --c-danger-soft: #fcebeb;
+  --c-danger-border: #f3c2c2;
+
+  --c-info: #0b6b8f;
+  --c-info-soft: #e2f2f8;
+  --c-info-border: #b0dcec;
+
+  --c-neutral-soft: #eef0f3;
+  --c-neutral-border: #d8dce2;
+
+  /* ---- Data visualisation (categorical, colour-blind safe ordering) ---- */
+  --c-chart-1: #2f5bea;
+  --c-chart-2: #0f9d76;
+  --c-chart-3: #d9822b;
+  --c-chart-4: #8b5cf6;
+  --c-chart-5: #d94f70;
+  --c-chart-6: #0b8ea8;
+  --c-chart-grid: #e6e9ee;
+
+  /* ---- Typography ----------------------------------------------------- */
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono: "SFMono-Regular", "JetBrains Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --fs-xs: 0.75rem;    /* 12px */
+  --fs-sm: 0.8125rem;  /* 13px */
+  --fs-md: 0.875rem;   /* 14px — body default in dense UI */
+  --fs-base: 1rem;     /* 16px */
+  --fs-lg: 1.125rem;   /* 18px */
+  --fs-xl: 1.375rem;   /* 22px */
+  --fs-2xl: 1.75rem;   /* 28px */
+  --fs-3xl: 2.25rem;   /* 36px */
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-tight: 1.25;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.7;
+
+  /* ---- Spacing (4px scale) -------------------------------------------- */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+
+  /* ---- Radii ---------------------------------------------------------- */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --r-xl: 14px;
+  --r-full: 999px;
+
+  /* ---- Elevation ------------------------------------------------------ */
+  --sh-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --sh-md: 0 2px 6px rgba(16, 24, 40, 0.08);
+  --sh-lg: 0 8px 24px rgba(16, 24, 40, 0.12);
+  --sh-xl: 0 20px 48px rgba(16, 24, 40, 0.18);
+
+  /* ---- Layout --------------------------------------------------------- */
+  --layout-sidebar: 232px;
+  --layout-topbar: 56px;
+  --layout-max: 1440px;
+
+  /* ---- Motion --------------------------------------------------------- */
+  --t-fast: 120ms ease;
+  --t-base: 200ms ease;
+
+  /* ---- Focus ---------------------------------------------------------- */
+  --focus-ring: 0 0 0 3px rgba(47, 91, 234, 0.35);
+
+  /* ---- Touch (used by the tablet-oriented mockups) --------------------- */
+  --touch-target: 48px;
+}

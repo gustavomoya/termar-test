@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sync · Termar Servicios</title>
+<link rel="stylesheet" href="design-system/tokens.css" />
+<link rel="stylesheet" href="design-system/base.css" />
+<link rel="stylesheet" href="design-system/components.css" />
+<link rel="stylesheet" href="design.css" />
+</head>
+<body>
+<div class="field-shell">
+
+  <header class="field-top">
+    <div class="field-top-row">
+      <div class="row">
+        <a class="btn btn-ghost btn-icon" href="index.html" aria-label="Back to today's jobs"
+           style="min-height:44px;min-width:44px;font-size:var(--fs-lg);">←</a>
+        <div>
+          <div class="text-sm text-secondary">Your work</div>
+          <strong style="font-size:var(--fs-lg);">What has been sent</strong>
+        </div>
+      </div>
+      <span class="conn is-offline">
+        <span class="conn-dot" aria-hidden="true"></span>
+        No signal
+      </span>
+    </div>
+  </header>
+
+  <main class="field-body" id="main">
+
+    <!-- Conflict — the thing that must never be resolved silently ---------- -->
+    <section class="sheet-section" style="border-color: var(--c-danger-border);">
+      <div class="sheet-head" style="background: var(--c-danger-soft); border-bottom-color: var(--c-danger-border);">
+        <span class="sheet-title text-danger">One job was done twice</span>
+        <span class="badge badge-danger">Needs your decision</span>
+      </div>
+
+      <div style="padding: var(--sp-4) var(--sp-4) 0;">
+        <p class="text-secondary" style="margin-bottom: var(--sp-2);">
+          <strong>TS-88223 · Colegio Santa Ana.</strong> While you were underground the office
+          reassigned this job to Berta Aína, and she filled it in too. Nothing has been sent.
+          Choose which worksheet is the real one — or send both and let the office decide.
+        </p>
+      </div>
+
+      <div class="conflict-pair">
+        <div class="conflict-side is-mine">
+          <h3>Yours</h3>
+          <div class="text-sm text-secondary">Ángel Sarasa · VAN-14</div>
+          <dl class="conflict-facts">
+            <div><dt>Completed</dt><dd>14:05 – 15:02</dd></div>
+            <div><dt>Checks answered</dt><dd>14 of 14</dd></div>
+            <div><dt>Failed checks</dt><dd>1</dd></div>
+            <div><dt>Parts used</dt><dd>Safety valve ×1</dd></div>
+            <div><dt>Photos</dt><dd>4</dd></div>
+            <div><dt>Signature</dt><dd>Quim Bardají</dd></div>
+          </dl>
+          <button class="btn btn-primary" type="button">Keep mine</button>
+        </div>
+
+        <div class="conflict-side">
+          <h3>Berta's</h3>
+          <div class="text-sm text-secondary">Berta Aína · VAN-06</div>
+          <dl class="conflict-facts">
+            <div><dt>Completed</dt><dd>15:12 – 15:44</dd></div>
+            <div><dt>Checks answered</dt><dd>11 of 14</dd></div>
+            <div><dt>Failed checks</dt><dd>0</dd></div>
+            <div><dt>Parts used</dt><dd>None</dd></div>
+            <div><dt>Photos</dt><dd>0</dd></div>
+            <div><dt>Signature</dt><dd>Not signed</dd></div>
+          </dl>
+          <button class="btn btn-secondary" type="button">Keep Berta's</button>
+        </div>
+      </div>
+
+      <div style="padding: 0 var(--sp-4) var(--sp-4);">
+        <button class="btn btn-secondary btn-touch btn-block" type="button">
+          Send both and let the office decide
+        </button>
+      </div>
+    </section>
+
+    <!-- Queue -------------------------------------------------------------- -->
+    <section class="sheet-section">
+      <div class="sheet-head">
+        <span class="sheet-title">Waiting to be sent</span>
+        <span class="text-sm text-secondary" data-queue-summary></span>
+      </div>
+
+      <div data-queue></div>
+
+      <div class="storage-bar">
+        <div class="row-between text-sm" style="margin-bottom: var(--sp-2);">
+          <span class="text-secondary">Space used on this tablet</span>
+          <strong>4.1 MB of 50 MB</strong>
+        </div>
+        <div class="progress">
+          <div class="progress-bar" style="width: 8%;"></div>
+        </div>
+        <p class="text-xs text-muted" style="margin-top: var(--sp-2);">
+          Photos are the large ones. On a two-day route this fills up.
+        </p>
+      </div>
+    </section>
+
+    <div class="alert alert-info">
+      <div class="text-sm">
+        Nothing here is lost if the tablet is switched off, runs out of battery, or is closed.
+        Everything is sent by itself the moment the van has signal.
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="action-bar">
+  <div class="action-bar-inner">
+    <a class="btn btn-secondary" href="index.html">Back to jobs</a>
+    <button class="btn btn-primary" type="button" disabled>Try sending now — no signal</button>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="design.js"></script>
+</body>
+</html>

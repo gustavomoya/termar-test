@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TS-88219 worksheet · Termar Servicios</title>
+<link rel="stylesheet" href="design-system/tokens.css" />
+<link rel="stylesheet" href="design-system/base.css" />
+<link rel="stylesheet" href="design-system/components.css" />
+<link rel="stylesheet" href="design.css" />
+</head>
+<body>
+<div class="field-shell">
+
+  <header class="field-top">
+    <div class="field-top-row">
+      <div class="row">
+        <a class="btn btn-ghost btn-icon" href="index.html" aria-label="Back to today's jobs"
+           style="min-height:44px;min-width:44px;font-size:var(--fs-lg);">←</a>
+        <div>
+          <div class="text-sm text-secondary">TS-88219 · Chiller service</div>
+          <strong style="font-size:var(--fs-lg);">Hospital Comarcal</strong>
+        </div>
+      </div>
+      <span class="conn is-offline">
+        <span class="conn-dot" aria-hidden="true"></span>
+        No signal
+      </span>
+    </div>
+    <div class="safety-banner">
+      <span aria-hidden="true">✓</span>
+      <span class="grow">Saved on this tablet at 13:51. It will be sent automatically.</span>
+    </div>
+  </header>
+
+  <main class="field-body" id="main">
+
+    <!-- Time on site ------------------------------------------------------ -->
+    <section class="sheet-section">
+      <div class="sheet-head">
+        <span class="sheet-title">Time on site</span>
+        <span class="badge badge-info">Billed</span>
+      </div>
+      <div class="timer">
+        <div>
+          <div class="timer-value">2h 13m</div>
+          <div class="text-sm text-secondary" style="margin-top:var(--sp-1);">
+            Started 11:38 · stopped 13:51
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-touch" type="button">Restart timer</button>
+      </div>
+    </section>
+
+    <!-- Checklist --------------------------------------------------------- -->
+    <section class="sheet-section">
+      <div class="sheet-head">
+        <span class="sheet-title">Chiller — service and inspection</span>
+        <span class="text-sm text-secondary" data-checklist-progress></span>
+      </div>
+      <div data-checklist></div>
+    </section>
+
+    <!-- Parts ------------------------------------------------------------- -->
+    <section class="sheet-section">
+      <div class="sheet-head">
+        <span class="sheet-title">Parts used from the van</span>
+        <button class="btn btn-ghost btn-sm" type="button">Search stock</button>
+      </div>
+      <div data-parts></div>
+    </section>
+
+    <!-- Photos ------------------------------------------------------------ -->
+    <section class="sheet-section">
+      <div class="sheet-head">
+        <span class="sheet-title">Photos</span>
+        <span class="text-sm text-secondary">3 on this tablet, 0 sent</span>
+      </div>
+      <div class="photo-grid" data-photos>
+        <button class="photo-add" type="button">
+          <span aria-hidden="true" style="font-size:1.6rem;">＋</span>
+          Take photo
+        </button>
+      </div>
+    </section>
+
+    <!-- Signature --------------------------------------------------------- -->
+    <section class="sheet-section">
+      <div class="sheet-head">
+        <span class="sheet-title">Customer signature</span>
+        <span class="badge badge-success">Signed 13:50</span>
+      </div>
+      <div class="sig-pad is-signed">
+        <span class="sig-mark" aria-hidden="true">N. Palau</span>
+      </div>
+      <div class="row-between" style="padding: 0 var(--sp-4) var(--sp-4);">
+        <div>
+          <div class="text-medium">Núria Palau</div>
+          <div class="text-sm text-secondary">Signed on this tablet, 30 June 13:50</div>
+        </div>
+        <button class="btn btn-secondary btn-touch" type="button">Sign again</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="action-bar">
+  <div class="action-bar-inner">
+    <a class="btn btn-secondary" href="index.html">Back</a>
+    <button class="btn btn-primary" type="button">Finish job</button>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="design.js"></script>
+</body>
+</html>

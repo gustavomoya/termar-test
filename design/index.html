@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Today · Termar Servicios</title>
+<link rel="stylesheet" href="design-system/tokens.css" />
+<link rel="stylesheet" href="design-system/base.css" />
+<link rel="stylesheet" href="design-system/components.css" />
+<link rel="stylesheet" href="design.css" />
+</head>
+<body>
+<div class="field-shell">
+
+  <header class="field-top">
+    <div class="field-top-row">
+      <div>
+        <div class="text-sm text-secondary">Tuesday 30 June</div>
+        <strong style="font-size:var(--fs-lg);">Ángel Sarasa · VAN-14</strong>
+      </div>
+      <a class="conn is-offline" href="sync.html">
+        <span class="conn-dot" aria-hidden="true"></span>
+        No signal
+      </a>
+    </div>
+    <div class="safety-banner is-warning">
+      <span aria-hidden="true">⤓</span>
+      <span class="grow">4 items are saved on this tablet and will be sent as soon as you have signal.</span>
+      <a href="sync.html" class="text-sm">See what</a>
+    </div>
+  </header>
+
+  <main class="field-body" id="main">
+
+    <section class="stat-strip" data-day-stats aria-label="Today's sync summary"></section>
+
+    <div class="day-divider">Today's jobs</div>
+
+    <div data-jobs></div>
+
+    <div class="alert alert-info" style="margin-top:var(--sp-4);">
+      <div class="text-sm">
+        You can work through every job here with no signal at all. Nothing is sent until
+        the van passes coverage, and nothing is lost if it does not.
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="action-bar">
+  <div class="action-bar-inner">
+    <a class="btn btn-secondary" href="sync.html">Sync (4)</a>
+    <button class="btn btn-primary" type="button">Start next job — 11:30 Hospital</button>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="design.js"></script>
+</body>
+</html>
