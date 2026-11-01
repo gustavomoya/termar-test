@@ -1,5 +1,5 @@
-import { getDB } from "../idb";
-import type { JobRecord } from "../schema";
+import { getDB } from "@/lib/db/idb";
+import type { JobRecord } from "@/lib/db";
 
 /**
  * Get all jobs from the database, ordered by their scheduled date.

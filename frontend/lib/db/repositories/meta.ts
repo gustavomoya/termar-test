@@ -1,6 +1,6 @@
-import { nowLocalIso } from "../../time";
-import { getDB } from "../idb";
-import type { DayInfo } from "../schema";
+import { nowLocalIso } from "@/lib/time";
+import { getDB } from "@/lib/db/idb";
+import type { DayInfo } from "@/lib/db";
 
 /**
  * Get the stored day information
