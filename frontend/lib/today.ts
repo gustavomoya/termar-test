@@ -67,6 +67,6 @@ export function dayStats(jobs: JobRecord[]) {
   };
 }
 
-export function unsavedCount(jobs: JobRecord[]): number {
-  return jobs.filter((job) => job.status !== "synced").length;
+export function pendingItemCount(jobs: JobRecord[]): number {
+  return jobs.reduce((total, job) => total + (job.queuedItems ?? 0), 0);
 }

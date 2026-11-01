@@ -6,8 +6,8 @@ import { useNetworkStore } from "@/lib/stores/networkStore";
 import {
   formatTime,
   nextJob,
+  pendingItemCount,
   shortSite,
-  unsavedCount,
 } from "@/lib/today";
 import { FieldHeader } from "./FieldHeader";
 import { JobList } from "./JobList";
@@ -60,7 +60,7 @@ export function TodayScreen() {
     );
   }
 
-  const pendingCount = unsavedCount(jobs);
+  const pendingCount = pendingItemCount(jobs);
   const next = nextJob(jobs);
 
   return (
@@ -78,11 +78,14 @@ export function TodayScreen() {
         </div>
       </main>
       <ActionBar
-        online={online}
         pendingCount={pendingCount}
         nextJob={
           next
-            ? { time: formatTime(next.scheduledAt), site: shortSite(next.site.name) }
+            ? {
+                id: next.id,
+                time: formatTime(next.scheduledAt),
+                site: shortSite(next.site.name),
+              }
             : undefined
         }
       />
