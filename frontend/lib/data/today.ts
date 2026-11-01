@@ -1,8 +1,13 @@
 import { fetchDay, fetchJobs } from "@/lib/api/today";
-import { listJobs, replaceJobs } from "@/lib/db";
-import { getDayInfo, setDayInfo } from "@/lib/db";
-import type { DayInfo, JobRecord } from "@/lib/db";
-import { nowLocalIso } from "../time";
+import {
+  getDayInfo,
+  listJobs,
+  replaceJobs,
+  setDayInfo,
+  type DayInfo,
+  type JobRecord,
+} from "@/lib/db";
+import { nowLocalIso } from "@/lib/time";
 
 export interface TodaySnapshot {
   day: DayInfo;
@@ -14,6 +19,7 @@ export type TodaySource = "network" | "cache";
 export interface TodayResult extends TodaySnapshot {
   source: TodaySource;
 }
+
 /**
  * Get the day's information stored in IndexedDB
  */
@@ -30,7 +36,9 @@ export async function readTodayCache(): Promise<TodaySnapshot | null> {
 export async function refreshToday(): Promise<TodaySnapshot> {
   const [day, remoteJobs] = await Promise.all([fetchDay(), fetchJobs()]);
   const cachedAt = nowLocalIso();
-  const jobs: JobRecord[] = remoteJobs.map((job) => ({ ...job, cachedAt }));
+  const jobs: JobRecord[] = remoteJobs
+    .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
+    .map((job) => ({ ...job, cachedAt }));
 
   await Promise.all([setDayInfo(day), replaceJobs(jobs)]);
 
