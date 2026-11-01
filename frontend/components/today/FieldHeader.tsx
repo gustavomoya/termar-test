@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { DayInfo } from "@/lib/db";
 import { formatDay } from "@/lib/today";
+import { ConnectionBadge } from "@/components/shared/ConnectionBadge";
 
 interface FieldHeaderProps {
   day: DayInfo;
@@ -18,20 +19,7 @@ export function FieldHeader({ day, online, pendingCount }: FieldHeaderProps) {
             {day.technician.name} · {day.technician.van}
           </div>
         </div>
-        <Link
-          href="/sync"
-          className={`inline-flex min-h-[48px] items-center gap-2 rounded-full border px-3 font-semibold text-sm ${
-            online
-              ? "border-success-border bg-success-soft text-success"
-              : "border-warning-border bg-warning-soft text-warning"
-          }`}
-        >
-          <span
-            className="h-2 w-2 rounded-full bg-current"
-            aria-hidden="true"
-          ></span>
-          {online ? "Online" : "No signal"}
-        </Link>
+        <ConnectionBadge online={online} />
       </div>
       {pendingCount > 0 && (
         <div className="flex items-center gap-3 px-4 py-3 border-b border-warning-border bg-warning-soft text-warning text-sm font-medium">
