@@ -94,7 +94,7 @@
   }
 
   body {
-    background: var(--color-bg);
+    background: var(--color-surface-sunken);
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: var(--text-md);
