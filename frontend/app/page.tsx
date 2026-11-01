@@ -1,10 +1,10 @@
-import { TodayShell } from "@/components/today/TodayShell";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { TodayScreen } from "@/components/today/TodayScreen";
 
 export default function TodayPage() {
   return (
-    <TodayShell>
+    <PageContainer>
       <TodayScreen />
-    </TodayShell>
+    </PageContainer>
   );
 }
