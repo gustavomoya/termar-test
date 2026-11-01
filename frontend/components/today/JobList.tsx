@@ -24,13 +24,13 @@ export function JobList({ jobs }: JobListProps) {
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-3 gap-3 mb-4 max-[520px]:grid-cols-1">
         {rows.map((row) => (
           <div
             key={row.label}
             className="px-4 py-3 bg-surface border border-border rounded-lg shadow-sm flex flex-col gap-2"
           >
-            <span className="text-xs text-ink-secondary font-medium">
+            <span className="text-sm text-ink-secondary font-medium">
               {row.label}
             </span>
             <span
@@ -47,7 +47,7 @@ export function JobList({ jobs }: JobListProps) {
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-3 mb-3 mt-5 text-xs font-semibold uppercase tracking-wider text-ink-muted">
+      <div className="flex items-center gap-3 mb-3 mt-5 text-sm font-semibold uppercase tracking-wider text-ink-muted">
         Today&apos;s jobs
         <div className="flex-1 h-[1px] bg-border"></div>
       </div>
