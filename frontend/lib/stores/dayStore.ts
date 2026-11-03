@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { DayInfo, JobRecord } from "@/lib/db";
-import { readTodayCache, loadToday } from "@/lib/data/today";
+import { readTodayCache, loadToday } from "@/lib/services/today";
 
 interface DayState {
   day: DayInfo | undefined;
