@@ -12,6 +12,16 @@ export async function listJobs(): Promise<JobRecord[]> {
 }
 
 /**
+ * Get job by id.
+ *
+ * @param id the job identifier
+ */
+export async function getJob(id: string): Promise<JobRecord | undefined> {
+  const db = await getDB();
+  return db.get("jobs", id);
+}
+
+/**
  * Inserts multiple jobs in the database.
  * 
  * @param jobs  the list of jobs
