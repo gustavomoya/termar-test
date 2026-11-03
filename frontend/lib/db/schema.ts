@@ -1,7 +1,7 @@
 import type { DBSchema, IDBPDatabase } from "idb";
 
 export const DB_NAME = "termar-field";
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 export type PlantType = "gas_boiler" | "chiller";
 export type JobPriority = "low" | "normal" | "high";
@@ -63,6 +63,81 @@ export interface MetaRecord {
   updatedAt: string;
 }
 
+export type ChecklistItemType = "passfail" | "measure";
+
+export interface ChecklistItem {
+  id: string;
+  label: string;
+  type: ChecklistItemType;
+  unit?: string;
+  min?: number;
+  max?: number;
+}
+
+export interface ChecklistTemplate {
+  plantType: PlantType;
+  label: string;
+  items: ChecklistItem[];
+}
+
+export interface StoredTemplate extends ChecklistTemplate {
+  cachedAt: string;
+}
+
+export interface VanStockItem {
+  sku: string;
+  label: string;
+  unit: string;
+  onVan: number;
+}
+
+export interface StoredStockItem extends VanStockItem {
+  cachedAt: string;
+}
+
+export type CheckResult = "pass" | "fail" | "na" | "measure";
+
+export interface CheckAnswer {
+  result?: CheckResult;
+  value?: number;
+  note?: string;
+  updatedAt: string;
+}
+
+export interface PartUsed {
+  sku: string;
+  label: string;
+  unit: string;
+  quantity: number;
+}
+
+export interface WorksheetPhotoMeta {
+  id: string;
+  caption: string;
+  capturedAt: string;
+  uploaded: boolean;
+}
+
+export interface Signature {
+  signedBy: string;
+  signedAt: string;
+  dataUrl?: string;
+}
+
+export interface WorksheetDraft {
+  jobId: string;
+  startedAt?: string;
+  runningSince?: string;
+  accumulatedMs: number;
+  stoppedAt?: string;
+  checks: Record<string, CheckAnswer>;
+  parts: PartUsed[];
+  photos: WorksheetPhotoMeta[];
+  signature?: Signature;
+  finishedAt?: string;
+  updatedAt: string;
+}
+
 export interface TermarDB extends DBSchema {
   jobs: {
     key: string;
@@ -75,6 +150,18 @@ export interface TermarDB extends DBSchema {
     key: MetaKey;
     value: MetaRecord;
   };
+  templates: {
+    key: string;
+    value: StoredTemplate;
+  };
+  worksheets: {
+    key: string;
+    value: WorksheetDraft;
+  };
+  stock: {
+    key: string;
+    value: StoredStockItem;
+  };
 }
 
 type Migration = (db: IDBPDatabase<TermarDB>) => void;
@@ -84,6 +171,11 @@ const migrations: Record<number, Migration> = {
     const jobs = db.createObjectStore("jobs", { keyPath: "id" });
     jobs.createIndex("by-scheduledAt", "scheduledAt");
     db.createObjectStore("meta", { keyPath: "key" });
+  },
+  2: (db) => {
+    db.createObjectStore("templates", { keyPath: "plantType" });
+    db.createObjectStore("worksheets", { keyPath: "jobId" });
+    db.createObjectStore("stock", { keyPath: "sku" });
   },
 };
 
