@@ -11,6 +11,7 @@ import { WorksheetLoading } from "@/components/worksheet/WorksheetLoading";
 import { TimerSection } from "@/components/worksheet/TimerSection";
 import { ChecklistSection } from "@/components/worksheet/ChecklistSection";
 import { PartsSection } from "@/components/worksheet/PartsSection";
+import { SignatureSection } from "@/components/worksheet/SignatureSection";
 import {
   primaryButtonClass,
   secondaryButtonClass,
@@ -137,6 +138,7 @@ export function WorksheetScreen({ jobId }: WorksheetScreenProps) {
         <TimerSection />
         <ChecklistSection />
         <PartsSection />
+        <SignatureSection />
       </main>
     </PageContainer>
   );

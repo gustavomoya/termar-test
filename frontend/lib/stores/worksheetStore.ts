@@ -405,6 +405,22 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
     },
 
     /**
+     * Store the customer's signature.
+     *
+     * @param signature the captured signature
+     */
+    setSignature: (signature) => {
+      updateDraft((draft) => ({ ...draft, signature }));
+    },
+
+    /**
+     * Remove the current signature.
+     */
+    clearSignature: () => {
+      updateDraft((draft) => ({ ...draft, signature: undefined }));
+    },
+
+    /**
      * Cancel any pending save and persist immediately.
      *
      * @returns true when the worksheet draft was saved successfully
