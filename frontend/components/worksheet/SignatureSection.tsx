@@ -35,22 +35,25 @@ export function SignatureSection() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ratio = window.devicePixelRatio || 1;
+    const ratio = Math.min(window.devicePixelRatio || 1, 3);
     const rect = canvas.getBoundingClientRect();
     canvas.width = Math.max(1, Math.round(rect.width * ratio));
     canvas.height = Math.max(1, Math.round(rect.height * ratio));
 
-    const context = canvas.getContext("2d");
+    const context = canvas.getContext("2d", {
+      alpha: true,
+      desynchronized: true,
+    });
     if (!context) return;
 
     context.scale(ratio, ratio);
 
     // Smooth drawing
-    context.lineWidth = 4.5;
+    context.lineWidth = 2.5;
     context.lineCap = "round";
     context.lineJoin = "round";
 
-    // Signature appearance
+    // appearance
     context.strokeStyle = "#16191d";
 
     //shadow
