@@ -35,7 +35,7 @@ export function SignatureSection() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ratio = Math.min(window.devicePixelRatio || 1, 3);
+    const ratio = Math.max(1, window.devicePixelRatio || 1);
     const rect = canvas.getBoundingClientRect();
     canvas.width = Math.max(1, Math.round(rect.width * ratio));
     canvas.height = Math.max(1, Math.round(rect.height * ratio));
@@ -55,12 +55,6 @@ export function SignatureSection() {
 
     // appearance
     context.strokeStyle = "#16191d";
-
-    //shadow
-    context.shadowColor = "rgba(30, 40, 55, 0.12)";
-    context.shadowBlur = 0.8;
-    context.shadowOffsetX = 0.4;
-    context.shadowOffsetY = 0.6;
 
   }, [signature]);
 
