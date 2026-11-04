@@ -9,10 +9,12 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { WorksheetHeader } from "@/components/worksheet/WorksheetHeader";
 import { WorksheetLoading } from "@/components/worksheet/WorksheetLoading";
 import {TimerSection} from "@/components/worksheet/TimerSection";
+import {ChecklistSection} from "@/components/worksheet/ChecklistSection";
 import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/worksheet/styles";
+
 
 
 interface WorksheetScreenProps {
@@ -134,6 +136,7 @@ export function WorksheetScreen({ jobId }: WorksheetScreenProps) {
         )}
 
         <TimerSection />
+        <ChecklistSection />
       </main>
     </PageContainer>
   );

@@ -228,6 +228,84 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
     },
 
     /**
+     * Save a pass, fail or not-applicable answer for a checklist item.
+     *
+     * @param itemId the checklist item identifier
+     * @param result the selected result
+     */
+    setCheck: (itemId, result) => {
+      const updatedAt = nowLocalIso();
+      updateDraft((draft) => {
+        const existing = draft.checks[itemId];
+        return {
+          ...draft,
+          checks: {
+            ...draft.checks,
+            [itemId]: {
+              result,
+              value: undefined,
+              note: result === "pass" ? undefined : existing?.note,
+              updatedAt,
+            },
+          },
+        };
+      });
+    },
+
+    /**
+     * Save a measured value. Passing undefined or a non-finite number
+     * clears the answer.
+     *
+     * @param itemId the checklist item identifier
+     * @param value  the measured value
+     */
+    setMeasure: (itemId, value) => {
+      const updatedAt = nowLocalIso();
+      updateDraft((draft) => {
+        const checks = { ...draft.checks };
+
+        if (value === undefined || !Number.isFinite(value)) {
+          delete checks[itemId];
+        } else {
+          checks[itemId] = {
+            result: "measure",
+            value,
+            note: checks[itemId]?.note,
+            updatedAt,
+          };
+        }
+
+        return { ...draft, checks };
+      });
+    },
+
+    /**
+     * Set or clear the note attached to a checklist answer.
+     *
+     * @param itemId the checklist item identifier
+     * @param note   the note text; whitespace-only clears it
+     */
+    setNote: (itemId, note) => {
+      const updatedAt = nowLocalIso();
+      updateDraft((draft) => {
+        const existing = draft.checks[itemId];
+        if (!existing) return draft;
+
+        return {
+          ...draft,
+          checks: {
+            ...draft.checks,
+            [itemId]: {
+              ...existing,
+              note: note.trim() ? note : undefined,
+              updatedAt,
+            },
+          },
+        };
+      });
+    },
+
+    /**
      * Cancel any pending save and persist immediately.
      *
      * @returns true when the worksheet draft was saved successfully
