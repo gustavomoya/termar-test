@@ -12,6 +12,7 @@ import { TimerSection } from "@/components/worksheet/TimerSection";
 import { ChecklistSection } from "@/components/worksheet/ChecklistSection";
 import { PartsSection } from "@/components/worksheet/PartsSection";
 import { SignatureSection } from "@/components/worksheet/SignatureSection";
+import { WorksheetActionBar } from "@/components/worksheet/WorksheetActionBar";
 import {
   primaryButtonClass,
   secondaryButtonClass,
@@ -140,6 +141,7 @@ export function WorksheetScreen({ jobId }: WorksheetScreenProps) {
         <PartsSection />
         <SignatureSection />
       </main>
+      <WorksheetActionBar readOnly={readOnly} />
     </PageContainer>
   );
 }

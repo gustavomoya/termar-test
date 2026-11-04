@@ -9,6 +9,7 @@ import type {
 } from "@/lib/db";
 import { loadWorksheet, saveWorksheetDraft } from "@/lib/services/worksheet";
 import { nowLocalIso } from "@/lib/time";
+import {validateFinish} from "@/lib/worksheet/validation";
 
 /**
  * Checklist result without the measurement variant.
@@ -418,6 +419,35 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
      */
     clearSignature: () => {
       updateDraft((draft) => ({ ...draft, signature: undefined }));
+    },
+
+    /**
+     * Validate and mark the worksheet as finished locally.
+     *
+     * @returns whether the worksheet passed validation and any validation errors
+     */
+    finish: () => {
+      const { draft, template } = get();
+      if (!draft || !template) {
+        const errors = ["The worksheet is not ready."];
+        set({ finishErrors: errors });
+        return { ok: false, errors };
+      }
+
+      const result = validateFinish(template, draft);
+      set({ finishErrors: result.errors });
+      if (!result.ok) return result;
+
+      const now = nowLocalIso();
+      dirty = true;
+      set({ draft: { ...draft, finishedAt: now, updatedAt: now } });
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = undefined;
+      }
+      void persist();
+
+      return result;
     },
 
     /**
