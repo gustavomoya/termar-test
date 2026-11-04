@@ -51,7 +51,7 @@ export async function readTodayCache(): Promise<TodaySnapshot | null> {
  * but still have an associated local worksheet (work in progress).
  *
  * Local jobs without a worksheet are discarded, as there is no work to preserve.
- * LRemote jobs are enriched with a cache timestamp.
+ * Remote jobs are enriched with a cache timestamp.
  *
  * @param remoteJobs jobs retrieved from the backend
  * @param localJobs  jobs stored on db
@@ -60,7 +60,7 @@ export async function readTodayCache(): Promise<TodaySnapshot | null> {
  * @returns jobs combined and sorted by scheduledAt
  */
 function mergeTodayJobs(
-  remoteJobs: JobRecord[],
+  remoteJobs: RemoteJob[],
   localJobs: JobRecord[],
   worksheets: WorksheetDraft[],
 ): JobRecord[] {
