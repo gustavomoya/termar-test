@@ -7,7 +7,8 @@ import type {
   StoredTemplate,
   WorksheetDraft,
 } from "@/lib/db";
-import { loadWorksheet } from "@/lib/services/worksheet";
+import { loadWorksheet, saveWorksheetDraft } from "@/lib/services/worksheet";
+import { nowLocalIso } from "@/lib/time";
 
 /**
  * Checklist result without the measurement variant.
@@ -52,6 +53,67 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
   // Whether the draft changed since the last successful save.
   let dirty = false;
+
+  /**
+   * Save the current worksheet, skipping writes when nothing changed.
+   *
+   * @returns true when the draft is saved or there is nothing to save
+   */
+  const persist = async (): Promise<boolean> => {
+    const draft = get().draft;
+    if (!draft) return false;
+
+    //If nothing has changed, do not write to the database.
+    if (!dirty) return true;
+
+    set({ saving: true });
+    try {
+      const saved = await saveWorksheetDraft(draft);
+      if (get().draft === draft) dirty = false;
+      set({
+        saving: false,
+        saveError: undefined,
+        lastSavedAt: saved.updatedAt,
+      });
+      return true;
+    } catch (error) {
+      set({ saving: false, saveError: error });
+      return false;
+    }
+  };
+
+  /**
+   * Schedule a save after the technician stops editing.
+   */
+  const scheduleSave = () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      saveTimer = undefined;
+      void persist();
+    }, 500);
+  };
+
+  /**
+   * Update the worksheet draft and schedule a save.
+   * No-op when the worksheet is read-only or not loaded.
+   *
+   * @param updater receives the current worksheet draft and returns the next one
+   */
+  const updateDraft = (updater: (draft: WorksheetDraft) => WorksheetDraft) => {
+    const draft = get().draft;
+    if (!draft || get().readOnly) return;
+
+    dirty = true;
+    set({
+      draft: {
+        ...updater(draft),
+        finishedAt: undefined,
+        updatedAt: nowLocalIso(),
+      },
+      finishErrors: [],
+    });
+    scheduleSave();
+  };
 
   return {
     stock: [],
@@ -99,6 +161,83 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
       } catch (error) {
         set({ loading: false, error });
       }
+    },
+    /**
+     * Start the site timer if it is not already running.
+     */
+    startTimer: () => {
+      const now = nowLocalIso();
+      updateDraft((draft) => {
+        if (draft.runningSince) return draft;
+        return {
+          ...draft,
+          startedAt: draft.startedAt ?? now,
+          runningSince: now,
+          stoppedAt: undefined,
+        };
+      });
+    },
+
+    /**
+     * Stop the site timer and accumulate the elapsed time.
+     */
+    stopTimer: () => {
+      const now = Date.now();
+      const stoppedAt = nowLocalIso();
+      updateDraft((draft) => {
+        if (!draft.runningSince) return draft;
+        return {
+          ...draft,
+          accumulatedMs:
+              draft.accumulatedMs +
+              Math.max(0, now - new Date(draft.runningSince).getTime()),
+          runningSince: undefined,
+          stoppedAt,
+        };
+      });
+    },
+
+    /**
+     * Resume the timer without resetting the accumulated time.
+     */
+    resumeTimer: () => {
+      const now = nowLocalIso();
+      updateDraft((draft) => {
+        if (draft.runningSince) return draft;
+        return {
+          ...draft,
+          startedAt: draft.startedAt ?? now,
+          runningSince: now,
+          stoppedAt: undefined,
+        };
+      });
+    },
+
+    /**
+     * Reset the timer and start it again from zero.
+     */
+    restartTimer: () => {
+      const now = nowLocalIso();
+      updateDraft((draft) => ({
+        ...draft,
+        startedAt: now,
+        runningSince: now,
+        accumulatedMs: 0,
+        stoppedAt: undefined,
+      }));
+    },
+
+    /**
+     * Cancel any pending save and persist immediately.
+     *
+     * @returns true when the worksheet draft was saved successfully
+     */
+    flush: async () => {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = undefined;
+      }
+      return persist();
     },
   };
 });
