@@ -1,7 +1,7 @@
 import type { DBSchema, IDBPDatabase } from "idb";
 
 export const DB_NAME = "termar-field";
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 export type PlantType = "gas_boiler" | "chiller";
 export type JobPriority = "low" | "normal" | "high";
@@ -11,6 +11,27 @@ export type JobSyncStatus =
   | "synced"
   | "conflict"
   | "failed";
+
+export type QueueStep = "worksheet" | "status";
+
+export type QueueItemStatus =
+  | "pending"
+  | "sending"
+  | "sent"
+  | "conflict"
+  | "failed";
+
+export interface QueueItem {
+  jobId: string;
+  step: QueueStep;
+  status: QueueItemStatus;
+  attempts: number;
+  lastAttemptAt?: string;
+  nextAttemptAt?: string;
+  lastError?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Technician {
   id: string;
@@ -162,6 +183,14 @@ export interface TermarDB extends DBSchema {
     key: string;
     value: StoredStockItem;
   };
+  queue: {
+    key: string;
+    value: QueueItem;
+    indexes: {
+      "by-status": QueueItemStatus;
+      "by-nextAttemptAt": string;
+    };
+  };
 }
 
 type Migration = (db: IDBPDatabase<TermarDB>) => void;
@@ -176,6 +205,11 @@ const migrations: Record<number, Migration> = {
     db.createObjectStore("templates", { keyPath: "plantType" });
     db.createObjectStore("worksheets", { keyPath: "jobId" });
     db.createObjectStore("stock", { keyPath: "sku" });
+  },
+  3: (db) => {
+    const queue = db.createObjectStore("queue", { keyPath: "jobId" });
+    queue.createIndex("by-status", "status");
+    queue.createIndex("by-nextAttemptAt", "nextAttemptAt");
   },
 };
 
