@@ -30,19 +30,14 @@ export function WorksheetActionBar({ readOnly }: WorksheetActionBarProps) {
 
   const handleFinish = async () => {
     setBusy(true);
-    const result = finish();
+    const result = await finish();
 
     if (!result.ok) {
       setBusy(false);
       return;
     }
 
-    const saved = await flush();
-    if (saved) {
-      router.push("/");
-    } else {
-      setBusy(false);
-    }
+    router.push("/");
   };
 
   return (

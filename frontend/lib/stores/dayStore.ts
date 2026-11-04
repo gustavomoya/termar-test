@@ -11,6 +11,7 @@ interface DayState {
 
   hydrate: () => Promise<void>;
   refresh: () => Promise<void>;
+  reloadFromCache: () => Promise<void>;
 }
 
 export const useDayStore = create<DayState>((set) => ({
@@ -61,5 +62,20 @@ export const useDayStore = create<DayState>((set) => ({
     } catch (error) {
       set({ loading: false, error });
     }
+  },
+
+  /**
+   * Reload the day and jobs from db without calling the network.
+   */
+  reloadFromCache: async () => {
+    const cached = await readTodayCache();
+    if (!cached) return;
+
+    set({
+      day: cached.day,
+      jobs: cached.jobs,
+      source: "cache",
+      error: undefined,
+    });
   },
 }));

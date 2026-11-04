@@ -7,9 +7,13 @@ import type {
   StoredTemplate,
   WorksheetDraft,
 } from "@/lib/db";
+import { getJob } from "@/lib/db";
 import { loadWorksheet, saveWorksheetDraft } from "@/lib/services/worksheet";
+import { flushQueue } from "@/lib/sync/engine";
+import { enqueueWorksheet } from "@/lib/sync/outbox";
+import { useNetworkStore } from "@/lib/stores/networkStore";
 import { nowLocalIso } from "@/lib/time";
-import {validateFinish} from "@/lib/worksheet/validation";
+import { validateFinish } from "@/lib/worksheet/validation";
 
 /**
  * Checklist result without the measurement variant.
@@ -46,7 +50,7 @@ interface WorksheetState {
   removePart: (sku: string) => void;
   setSignature: (signature: Signature) => void;
   clearSignature: () => void;
-  finish: () => { ok: boolean; errors: string[] };
+  finish: () => Promise<{ ok: boolean; errors: string[] }>;
   flush: () => Promise<boolean>;
 }
 
@@ -422,11 +426,13 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
     },
 
     /**
-     * Validate and mark the worksheet as finished locally.
+     * Validate the worksheet, save it locally, add it to the outbox and try an
+     * immediate sync when the tablet is online. Navigation is not blocked by
+     * the network request.
      *
      * @returns whether the worksheet passed validation and any validation errors
      */
-    finish: () => {
+    finish: async () => {
       const { draft, template } = get();
       if (!draft || !template) {
         const errors = ["The worksheet is not ready."];
@@ -445,7 +451,40 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
         clearTimeout(saveTimer);
         saveTimer = undefined;
       }
-      void persist();
+
+      const saved = await persist();
+      if (!saved) {
+        const errors = ["Could not save the worksheet."];
+        set({ finishErrors: errors });
+        return { ok: false, errors };
+      }
+
+      try {
+        await enqueueWorksheet(draft.jobId);
+      } catch (error) {
+        const errors = ["Could not queue the worksheet."];
+        set({ finishErrors: errors, saveError: error });
+        return { ok: false, errors };
+      }
+
+      const queuedJob = await getJob(draft.jobId);
+      if (queuedJob) set({ job: queuedJob });
+
+      if (useNetworkStore.getState().online) {
+        void flushQueue()
+          .then(async () => {
+            const syncedJob = await getJob(draft.jobId);
+            if (!syncedJob || get().draft?.jobId !== draft.jobId) return;
+
+            set({
+              job: syncedJob,
+              readOnly:
+                syncedJob.status === "synced" ||
+                syncedJob.status === "conflict",
+            });
+          })
+          .catch(() => {});
+      }
 
       return result;
     },

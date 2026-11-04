@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SyncProvider } from "@/components/sync/SyncProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,7 +13,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className="h-full antialiased"
     >
-      <body className="min-h-dvh flex flex-col">{children}</body>
+      <body className="min-h-dvh flex flex-col">
+        <SyncProvider />
+        {children}
+      </body>
     </html>
   );
 }

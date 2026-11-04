@@ -1,6 +1,7 @@
 import type {
   CheckResult,
   ChecklistTemplate,
+  JobSyncStatus,
   PlantType,
   VanStockItem,
 } from "@/lib/db";
@@ -30,6 +31,7 @@ export interface RemoteWorksheetSignature {
   signedBy: string;
   signedAt: string;
   captured?: boolean;
+  dataUrl?: string;
 }
 
 export interface RemoteWorksheet {
@@ -71,6 +73,40 @@ export async function fetchTemplate(
  */
 export function fetchVanStock(): Promise<VanStockItem[]> {
   return apiFetch<VanStockItem[]>("/api/van-stock");
+}
+
+/**
+ * Save (create or replace) a job's worksheet on the backend.
+ */
+export function uploadWorksheet(
+  id: string,
+  worksheet: RemoteWorksheet,
+): Promise<RemoteWorksheet> {
+  return apiFetch<RemoteWorksheet>(
+    `/api/jobs/${encodeURIComponent(id)}/worksheet`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(worksheet),
+    },
+  );
+}
+
+/**
+ * Update a job's sync status on the backend.
+ */
+export function setJobStatus(
+  id: string,
+  status: JobSyncStatus,
+): Promise<RemoteJob> {
+  return apiFetch<RemoteJob>(
+    `/api/jobs/${encodeURIComponent(id)}/status`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    },
+  );
 }
 
 /**

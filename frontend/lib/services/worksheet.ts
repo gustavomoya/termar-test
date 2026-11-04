@@ -200,9 +200,62 @@ function mapRemoteWorksheetToDraft(
       ? {
           signedBy: remote.signature.signedBy,
           signedAt: remote.signature.signedAt,
+          dataUrl: remote.signature.dataUrl,
         }
       : undefined,
     updatedAt,
+  };
+}
+
+/**
+ * Map a local worksheet to the payload accepted by the backend.
+ * Unanswered checks are omitted; measured values, notes, photos and the
+ * signature (including its data URL) are included when present.
+ *
+ * @param draft the local worksheet
+ *
+ * @returns the worksheet payload for the PUT request
+ */
+export function mapDraftToRemoteWorksheet(
+  draft: WorksheetDraft,
+): RemoteWorksheet {
+  const checks: RemoteWorksheet["checks"] = [];
+
+  for (const [id, answer] of Object.entries(draft.checks)) {
+    if (!answer.result) continue;
+
+    checks.push({
+      id,
+      result: answer.result,
+      value: answer.value,
+      note: answer.note,
+    });
+  }
+
+  return {
+    jobId: draft.jobId,
+    ...(draft.startedAt ? { startedAt: draft.startedAt } : {}),
+    ...(draft.stoppedAt ? { stoppedAt: draft.stoppedAt } : {}),
+    checks,
+    parts: draft.parts.map((part) => ({
+      sku: part.sku,
+      quantity: part.quantity,
+    })),
+    ...(draft.photos.length
+      ? { photos: draft.photos.map((photo) => ({ ...photo })) }
+      : {}),
+    ...(draft.signature
+      ? {
+          signature: {
+            signedBy: draft.signature.signedBy,
+            signedAt: draft.signature.signedAt,
+            captured: true,
+            ...(draft.signature.dataUrl
+              ? { dataUrl: draft.signature.dataUrl }
+              : {}),
+          },
+        }
+      : {}),
   };
 }
 
