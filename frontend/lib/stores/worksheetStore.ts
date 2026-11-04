@@ -306,6 +306,105 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
     },
 
     /**
+     * Add one unit of a stock item, respecting the quantity available on the van.
+     *
+     * @param item the stock item to add
+     */
+    addPart: (item) => {
+      const draft = get().draft;
+      if (!draft || get().readOnly) return;
+
+      const usage = get().stockUsage;
+      const used = usage[item.sku] ?? 0;
+      if (used >= item.onVan) return;
+
+      const existing = draft.parts.find((part) => part.sku === item.sku);
+      const parts = existing
+          ? draft.parts.map((part) =>
+              part.sku === item.sku
+                  ? { ...part, quantity: part.quantity + 1 }
+                  : part,
+          )
+          : [
+            ...draft.parts,
+            {
+              sku: item.sku,
+              label: item.label,
+              unit: item.unit,
+              quantity: 1,
+            },
+          ];
+
+      dirty = true;
+      set({
+        draft: { ...draft, parts, updatedAt: nowLocalIso() },
+        stockUsage: { ...usage, [item.sku]: used + 1 },
+        finishErrors: [],
+      });
+      scheduleSave();
+    },
+
+    /**
+     * Remove one unit of a part, deleting it when its quantity reaches zero.
+     *
+     * @param sku the part SKU
+     */
+    decrementPart: (sku) => {
+      const draft = get().draft;
+      if (!draft || get().readOnly) return;
+
+      const existing = draft.parts.find((part) => part.sku === sku);
+      if (!existing) return;
+
+      const usage = get().stockUsage;
+      const used = Math.max(0, (usage[sku] ?? 0) - 1);
+      const parts =
+          existing.quantity <= 1
+              ? draft.parts.filter((part) => part.sku !== sku)
+              : draft.parts.map((part) =>
+                  part.sku === sku
+                      ? { ...part, quantity: part.quantity - 1 }
+                      : part,
+              );
+
+      dirty = true;
+      set({
+        draft: { ...draft, parts, updatedAt: nowLocalIso() },
+        stockUsage: { ...usage, [sku]: used },
+        finishErrors: [],
+      });
+      scheduleSave();
+    },
+
+    /**
+     * Remove all units of a part from the worksheet.
+     *
+     * @param sku the part SKU
+     */
+    removePart: (sku) => {
+      const draft = get().draft;
+      if (!draft || get().readOnly) return;
+
+      const existing = draft.parts.find((part) => part.sku === sku);
+      if (!existing) return;
+
+      const usage = get().stockUsage;
+      const used = Math.max(0, (usage[sku] ?? 0) - existing.quantity);
+
+      dirty = true;
+      set({
+        draft: {
+          ...draft,
+          parts: draft.parts.filter((part) => part.sku !== sku),
+          updatedAt: nowLocalIso(),
+        },
+        stockUsage: { ...usage, [sku]: used },
+        finishErrors: [],
+      });
+      scheduleSave();
+    },
+
+    /**
      * Cancel any pending save and persist immediately.
      *
      * @returns true when the worksheet draft was saved successfully
