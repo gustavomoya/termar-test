@@ -3,6 +3,7 @@ import { fetchTemplate, fetchVanStock } from "@/lib/api/worksheet";
 import {
   getDayInfo,
   listJobs,
+  listQueueItems,
   listWorksheets,
   replaceJobs,
   setDayInfo,
@@ -10,6 +11,7 @@ import {
   replaceStock,
   type DayInfo,
   type JobRecord,
+  type QueueItem,
   type WorksheetDraft,
 } from "@/lib/db";
 import { nowLocalIso } from "@/lib/time";
@@ -47,15 +49,17 @@ export async function readTodayCache(): Promise<TodaySnapshot | null> {
 }
 
 /**
- * Merge remote jobs with local jobs that have not yet been synchronized
- * but still have an associated local worksheet (work in progress).
+ * Merge remote jobs with local jobs that still have local work: a worksheet
+ * or a queued item. Remote jobs with queued work keep their local sync
+ * status so the refresh does not overwrite "queued"/"failed"/"conflict".
  *
- * Local jobs without a worksheet are discarded, as there is no work to preserve.
- * Remote jobs are enriched with a cache timestamp.
+ * Local jobs without a worksheet or queue item are discarded, as there is no
+ * work to preserve. Remote jobs are enriched with a cache timestamp.
  *
  * @param remoteJobs jobs retrieved from the backend
  * @param localJobs  jobs stored on db
  * @param worksheets local worksheets stored on db
+ * @param queueItems local queue stored on db
  *
  * @returns jobs combined and sorted by scheduledAt
  */
@@ -63,37 +67,65 @@ function mergeTodayJobs(
   remoteJobs: RemoteJob[],
   localJobs: JobRecord[],
   worksheets: WorksheetDraft[],
+  queueItems: QueueItem[],
 ): JobRecord[] {
+  const cachedAt = nowLocalIso();
   const remoteIds = new Set(remoteJobs.map((job) => job.id));
-  const worksheetJobIds = new Set(
-    worksheets.map((worksheet) => worksheet.jobId),
-  );
+  const localById = new Map(localJobs.map((job) => [job.id, job]));
+  const queueJobIds = new Set(queueItems.map((item) => item.jobId));
+  const preservedJobIds = new Set([
+    ...worksheets.map((worksheet) => worksheet.jobId),
+    ...queueJobIds,
+  ]);
 
   const localOnly = localJobs.filter(
-    (job) => !remoteIds.has(job.id) && worksheetJobIds.has(job.id),
+    (job) => !remoteIds.has(job.id) && preservedJobIds.has(job.id),
   );
 
-  return [
-    ...remoteJobs.map((job) => ({ ...job, cachedAt: nowLocalIso() })),
-    ...localOnly,
-  ].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+  const remote = remoteJobs.map((job) => {
+    const local = localById.get(job.id);
+    if (!local || !queueJobIds.has(job.id)) {
+      return { ...job, cachedAt };
+    }
+
+    return {
+      ...job,
+      status: local.status,
+      localOnly: local.localOnly,
+      queuedItems: local.queuedItems,
+      syncedAt: local.syncedAt,
+      conflictWith: local.conflictWith,
+      cachedAt,
+    };
+  });
+
+  return [...remote, ...localOnly].sort((a, b) =>
+    a.scheduledAt.localeCompare(b.scheduledAt),
+  );
 }
 
 /**
- * Fetch the latest day and jobs, merge local-only jobs that still have a
- * worksheet, persist the result, and pre-cache data.
+ * Fetch the current day's data and jobs, merge local-only jobs that still have a
+ * worksheet or queued item, persist the result, and pre-cache data.
  *
  * @returns the refreshed day and jobs
  */
 export async function refreshToday(): Promise<TodaySnapshot> {
-  const [day, remoteJobs, localJobs, worksheets] = await Promise.all([
-    fetchDay(),
-    fetchJobs(),
-    listJobs(),
-    listWorksheets(),
-  ]);
+  const [day, remoteJobs, localJobs, worksheets, queueItems] =
+    await Promise.all([
+      fetchDay(),
+      fetchJobs(),
+      listJobs(),
+      listWorksheets(),
+      listQueueItems(),
+    ]);
 
-  const jobs = mergeTodayJobs(remoteJobs, localJobs, worksheets);
+  const jobs = mergeTodayJobs(
+    remoteJobs,
+    localJobs,
+    worksheets,
+    queueItems,
+  );
 
   await Promise.all([setDayInfo(day), replaceJobs(jobs)]);
 
