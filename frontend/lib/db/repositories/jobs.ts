@@ -22,6 +22,32 @@ export async function getJob(id: string): Promise<JobRecord | undefined> {
 }
 
 /**
+ * Update a job without replacing the fields that are not provided.
+ *
+ * @param jobId the job identifier
+ * @param patch the fields to update
+ *
+ * @returns the updated job, or undefined when the job does not exist
+ */
+export async function patchJob(
+  jobId: string,
+  patch: Partial<Omit<JobRecord, "id">>,
+): Promise<JobRecord | undefined> {
+  const db = await getDB();
+  const tx = db.transaction("jobs", "readwrite");
+  const current = await tx.store.get(jobId);
+  if (!current) {
+    await tx.done;
+    return undefined;
+  }
+
+  const next = { ...current, ...patch };
+  await tx.store.put(next);
+  await tx.done;
+  return next;
+}
+
+/**
  * Inserts multiple jobs in the database.
  * 
  * @param jobs  the list of jobs
