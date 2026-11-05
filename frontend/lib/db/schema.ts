@@ -1,7 +1,7 @@
 import type { DBSchema, IDBPDatabase } from "idb";
 
 export const DB_NAME = "termar-field";
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 export type PlantType = "gas_boiler" | "chiller";
 export type JobPriority = "low" | "normal" | "high";
@@ -21,6 +21,17 @@ export type QueueItemStatus =
   | "conflict"
   | "failed";
 
+export type ConflictResolution = "keep_mine" | "keep_other" | "send_both";
+
+/**
+ * Resolutions that upload a worksheet. "keep_other" is archive-only: the
+ * office's copy already exists, so only a status update is queued.
+ */
+export type QueueConflictResolution = Exclude<
+  ConflictResolution,
+  "keep_other"
+>;
+
 export interface QueueItem {
   jobId: string;
   step: QueueStep;
@@ -29,6 +40,8 @@ export interface QueueItem {
   lastAttemptAt?: string;
   nextAttemptAt?: string;
   lastError?: string;
+  resolution?: QueueConflictResolution;
+  conflictWith?: ConflictWith;
   createdAt: string;
   updatedAt: string;
 }
@@ -159,6 +172,20 @@ export interface WorksheetDraft {
   updatedAt: string;
 }
 
+export interface ArchivedWorksheet {
+  id: string;
+  jobId: string;
+  reference: string;
+  site: string;
+  side: "mine" | "other";
+  resolution: ConflictResolution;
+  technician: string;
+  completedAt?: string;
+  worksheet?: WorksheetDraft;
+  conflictWith?: ConflictWith;
+  archivedAt: string;
+}
+
 export interface TermarDB extends DBSchema {
   jobs: {
     key: string;
@@ -191,6 +218,14 @@ export interface TermarDB extends DBSchema {
       "by-nextAttemptAt": string;
     };
   };
+  archive: {
+    key: string;
+    value: ArchivedWorksheet;
+    indexes: {
+      "by-jobId": string;
+      "by-archivedAt": string;
+    };
+  };
 }
 
 type Migration = (db: IDBPDatabase<TermarDB>) => void;
@@ -210,6 +245,11 @@ const migrations: Record<number, Migration> = {
     const queue = db.createObjectStore("queue", { keyPath: "jobId" });
     queue.createIndex("by-status", "status");
     queue.createIndex("by-nextAttemptAt", "nextAttemptAt");
+  },
+  4: (db) => {
+    const archive = db.createObjectStore("archive", { keyPath: "id" });
+    archive.createIndex("by-jobId", "jobId");
+    archive.createIndex("by-archivedAt", "archivedAt");
   },
 };
 
