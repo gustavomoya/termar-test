@@ -30,3 +30,13 @@ export async function listWorksheets(): Promise<WorksheetDraft[]> {
   const db = await getDB();
   return db.getAll("worksheets");
 }
+
+/**
+ * Remove a worksheet.
+ *
+ * @param jobId the job identifier
+ */
+export async function deleteWorksheet(jobId: string): Promise<void> {
+  const db = await getDB();
+  await db.delete("worksheets", jobId);
+}
