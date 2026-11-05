@@ -2,6 +2,7 @@ import { listJobs, listQueueItems, listWorksheets, type JobRecord, type JobSyncS
   type QueueItemStatus, type QueueStep, type WorksheetDraft } from "@/lib/db";
 import { formatTime } from "@/lib/today";
 import { readTodayCache } from "@/lib/services/today";
+import { isDemoConflictEnabled } from "@/lib/demo/flags";
 
 /**
  * Safely reads a list from a database store.
@@ -191,6 +192,18 @@ export interface ConflictSummary {
  * the data the office has about the other technician's copy.
  */
 export async function loadConflicts(): Promise<ConflictSummary[]> {
+  // Demo-only fixture: never imported nor called in production.
+  if (isDemoConflictEnabled()) {
+    try {
+      const { seedDemoConflictIfNeeded } = await import(
+        "@/lib/demo/conflict"
+      );
+      await seedDemoConflictIfNeeded();
+    } catch {
+      // Never block the conflict list because the demo seed failed.
+    }
+  }
+
   const [jobs, worksheets, cached] = await Promise.all([
     safeList(listJobs),
     safeList(listWorksheets),

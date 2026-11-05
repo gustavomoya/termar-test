@@ -15,6 +15,7 @@ import {
   type WorksheetDraft,
 } from "@/lib/db";
 import { nowLocalIso } from "@/lib/time";
+import { isDemoConflictEnabled } from "@/lib/demo/flags";
 
 /**
  * Day and jobs cached on db.
@@ -137,6 +138,18 @@ export async function refreshToday(): Promise<TodaySnapshot> {
     ),
     fetchVanStock().then((stock) => replaceStock(stock)),
   ]);
+
+  // Demo-only fixture: never imported nor called in production.
+  if (isDemoConflictEnabled()) {
+    try {
+      const { seedDemoConflictIfNeeded } = await import(
+        "@/lib/demo/conflict"
+      );
+      await seedDemoConflictIfNeeded();
+    } catch {
+      // The demo seed must never block loading the day.
+    }
+  }
 
   return { day, jobs };
 }
