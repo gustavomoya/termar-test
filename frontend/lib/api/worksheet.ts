@@ -3,6 +3,7 @@ import type {
   ChecklistTemplate,
   JobSyncStatus,
   PlantType,
+  QueueConflictResolution,
   VanStockItem,
 } from "@/lib/db";
 import { ApiError, apiFetch } from "./client";
@@ -34,6 +35,13 @@ export interface RemoteWorksheetSignature {
   dataUrl?: string;
 }
 
+export interface RemoteWorksheetConflict {
+  resolution: QueueConflictResolution;
+  otherTechnician?: string;
+  otherCompletedAt?: string;
+  note?: string;
+}
+
 export interface RemoteWorksheet {
   jobId: string;
   startedAt?: string;
@@ -42,6 +50,7 @@ export interface RemoteWorksheet {
   parts: RemoteWorksheetPart[];
   photos?: RemoteWorksheetPhoto[];
   signature?: RemoteWorksheetSignature;
+  conflict?: RemoteWorksheetConflict;
 }
 
 interface RemoteTemplate {

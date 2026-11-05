@@ -218,6 +218,7 @@ function mapRemoteWorksheetToDraft(
  */
 export function mapDraftToRemoteWorksheet(
   draft: WorksheetDraft,
+  conflict?: RemoteWorksheet["conflict"],
 ): RemoteWorksheet {
   const checks: RemoteWorksheet["checks"] = [];
 
@@ -256,6 +257,7 @@ export function mapDraftToRemoteWorksheet(
           },
         }
       : {}),
+    ...(conflict ? { conflict } : {}),
   };
 }
 

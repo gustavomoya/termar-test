@@ -105,7 +105,26 @@ async function processJob(jobId: string): Promise<JobOutcome> {
         const draft = await getWorksheet(jobId);
         if (!draft) throw new RejectedError("Worksheet not found");
 
-        await uploadWorksheet(jobId, mapDraftToRemoteWorksheet(draft));
+        const conflict = claimed.resolution
+          ? {
+              resolution: claimed.resolution,
+              ...(claimed.conflictWith
+                ? {
+                    otherTechnician: claimed.conflictWith.technician,
+                    otherCompletedAt: claimed.conflictWith.completedAt,
+                  }
+                : {}),
+              note:
+                claimed.resolution === "send_both"
+                  ? "Both worksheets were kept; the office has to decide."
+                  : "The technician kept this worksheet for the conflicted job.",
+            }
+          : undefined;
+
+        await uploadWorksheet(
+          jobId,
+          mapDraftToRemoteWorksheet(draft, conflict),
+        );
 
         const advanced = await advanceToStatus(jobId);
         if (!advanced) return "skipped";
@@ -144,13 +163,17 @@ async function processJob(jobId: string): Promise<JobOutcome> {
  *
  * @returns a summary of the run
  */
-async function runQueue(): Promise<SyncRunResult> {
+async function runQueue(force: boolean): Promise<SyncRunResult> {
   const now = Date.now();
   const items = await listQueueItems();
   const jobIds = [
     ...new Set(
       items
-        .filter((item) => isDue(item, now))
+        .filter(
+          (item) =>
+            (item.status === "pending" || item.status === "sending") &&
+            (force || isDue(item, now)),
+        )
         .sort(compareQueueItems)
         .map((item) => item.jobId),
     ),
@@ -198,12 +221,16 @@ export async function getNextSyncAt(): Promise<string | undefined> {
 /**
  * Run the sync engine, sharing the active run when called concurrently.
  *
+ * @param options.force ignore the backoff timer so a manual attempt can be made
+ *
  * @returns the summary of the current run
  */
-export function flushQueue(): Promise<SyncRunResult> {
+export function flushQueue(
+  options: { force?: boolean } = {},
+): Promise<SyncRunResult> {
   if (activeRun) return activeRun;
 
-  const run = runQueue().finally(() => {
+  const run = runQueue(options.force ?? false).finally(() => {
     if (activeRun === run) activeRun = undefined;
   });
   activeRun = run;

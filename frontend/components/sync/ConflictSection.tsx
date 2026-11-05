@@ -157,6 +157,7 @@ export function ConflictSection({
 export function ConflictsList() {
   const conflicts = useSyncStore((state) => state.conflicts);
   const sending = useSyncStore((state) => state.sending);
+  const resolveConflict = useSyncStore((state) => state.resolveConflict);
 
   if (conflicts.length === 0) return null;
 
@@ -168,7 +169,7 @@ export function ConflictsList() {
           conflict={conflict}
           sending={sending}
           onResolve={(jobId, decision) =>
-            void function (){}
+            void resolveConflict(jobId, decision)
           }
         />
       ))}

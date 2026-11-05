@@ -24,15 +24,24 @@ function describeError(error: unknown): string {
   return "Sync failed";
 }
 
+export interface EnqueueOptions {
+  resolution?: QueueItem["resolution"];
+  conflictWith?: ConflictWith;
+}
+
 /**
  * Add a job to the outbox, or reset its existing item so the latest worksheet
  * is sent again. The job is marked as queued on the db
  *
- * @param jobId the job identifier
+ * @param jobId   the job identifier
+ * @param options how the job was resolved when it came from a conflict
  *
  * @returns the queued item
  */
-export async function enqueueWorksheet(jobId: string): Promise<QueueItem> {
+export async function enqueueWorksheet(
+  jobId: string,
+  options: EnqueueOptions = {},
+): Promise<QueueItem> {
   const job = await getJob(jobId);
   if (!job) throw new Error(`Job ${jobId} not found`);
 
@@ -43,6 +52,8 @@ export async function enqueueWorksheet(jobId: string): Promise<QueueItem> {
     step: "worksheet",
     status: "pending",
     attempts: 0,
+    ...(options.resolution ? { resolution: options.resolution } : {}),
+    ...(options.conflictWith ? { conflictWith: options.conflictWith } : {}),
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
@@ -50,6 +61,35 @@ export async function enqueueWorksheet(jobId: string): Promise<QueueItem> {
   await putQueueItem(item);
   notifyQueueChanged();
   await patchJob(jobId, { status: "queued", queuedItems: 1 });
+
+  return item;
+}
+
+/**
+ * Queue a status-only update, used when the technician accepts the office's
+ * copy of a conflicted job and no worksheet has to be uploaded.
+ *
+ * @param jobId the job identifier
+ *
+ * @returns the queued item
+ */
+export async function enqueueStatus(jobId: string): Promise<QueueItem> {
+  const job = await getJob(jobId);
+  if (!job) throw new Error(`Job ${jobId} not found`);
+
+  const now = nowLocalIso();
+  const existing = await getQueueItem(jobId);
+  const item: QueueItem = {
+    jobId,
+    step: "status",
+    status: "pending",
+    attempts: 0,
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
+  };
+
+  await putQueueItem(item);
+  notifyQueueChanged();
 
   return item;
 }
@@ -220,6 +260,7 @@ export async function markQueueSent(jobId: string): Promise<void> {
     queuedItems: 0,
     syncedAt: now,
     localOnly: false,
+    conflictWith: undefined,
   });
   await deleteQueueItem(jobId);
   notifyQueueChanged();

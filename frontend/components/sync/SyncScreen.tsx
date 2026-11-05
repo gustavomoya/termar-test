@@ -17,6 +17,7 @@ export function SyncScreen() {
   const conflicts = useSyncStore((state) => state.conflicts);
   const loading = useSyncStore((state) => state.loading);
   const error = useSyncStore((state) => state.error);
+  const sendError = useSyncStore((state) => state.sendError);
   const hydrate = useSyncStore((state) => state.hydrate);
 
   useEffect(() => {
@@ -71,7 +72,30 @@ export function SyncScreen() {
               </div>
           ) : hasWork ? (
               <>
+                {sendError && (
+                    <div
+                        role="alert"
+                        className="rounded-lg border border-danger-border bg-danger-soft px-4 py-3 text-sm text-danger"
+                    >
+                      {sendError}
+                    </div>
+                )}
                 {conflict > 0 && <ConflictsList/>}
+                {waiting > 0 && (
+                    <div className="rounded-lg border border-info-border bg-info-soft px-4 py-3 text-sm text-info">
+                      {waiting === 1
+                          ? "1 item is saved on this tablet. It will be sent automatically as soon as the van has signal."
+                          : `${waiting} items are saved on this tablet. They will be sent automatically as soon as the van has signal.`}
+                    </div>
+                )}
+                {failed > 0 && (
+                    <div className="rounded-lg border border-danger-border bg-danger-soft px-4 py-3 text-sm text-danger">
+                      {failed === 1
+                          ? "1 item could not be sent."
+                          : `${failed} items could not be sent.`}{" "}
+                      Your work is still on this tablet.
+                    </div>
+                )}
               </>
           ) : (
               <div className="rounded-lg border border-success-border bg-success-soft p-4 text-sm text-success">
