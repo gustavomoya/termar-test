@@ -2,6 +2,7 @@ import { listJobs, listQueueItems, listWorksheets, type JobRecord, type JobSyncS
   type QueueItemStatus, type QueueStep, type WorksheetDraft } from "@/lib/db";
 import { formatTime } from "@/lib/today";
 import { readTodayCache } from "@/lib/services/today";
+import { mapDraftToRemoteWorksheet } from "@/lib/services/worksheet";
 import { isDemoConflictEnabled } from "@/lib/demo/flags";
 
 /**
@@ -66,6 +67,24 @@ function answeredCount(worksheet: WorksheetDraft): number {
 }
 
 /**
+ * Estimate the bytes a queued step will send.
+ *
+ * The worksheet upload is the real payload (signature included); the status
+ * step only sends a small JSON body.
+ */
+function estimateSize(
+  item: QueueItem,
+  worksheet: WorksheetDraft | undefined,
+): number {
+  const payload =
+    item.step === "worksheet" && worksheet
+      ? mapDraftToRemoteWorksheet(worksheet)
+      : { status: "synced" };
+
+  return new TextEncoder().encode(JSON.stringify(payload)).length;
+}
+
+/**
  * Describe a queued step for the Sync screen.
  */
 function describeItem(
@@ -83,7 +102,7 @@ function describeItem(
     step: item.step,
     status: item.status,
     label,
-    sizeBytes: 0,
+    sizeBytes: estimateSize(item, worksheet),
     attempts: item.attempts,
     nextAttemptAt: item.nextAttemptAt,
     lastError: item.lastError,

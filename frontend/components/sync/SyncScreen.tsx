@@ -7,6 +7,7 @@ import {ConnectionBadge} from "@/components/shared/ConnectionBadge";
 import {useSyncStore} from "@/lib/stores/syncStore";
 import {useEffect} from "react";
 import {ConflictsList} from "@/components/sync/ConflictSection";
+import {SyncQueueList} from "@/components/sync/SyncQueueList";
 
 /**
  * Sync screen
@@ -24,7 +25,9 @@ export function SyncScreen() {
     void hydrate();
   }, [hydrate]);
 
+  const groups = overview?.groups ?? [];
   const waiting = overview?.waiting ?? 0;
+  const waitingBytes = overview?.waitingBytes ?? 0;
   const failed = overview?.failed ?? 0;
   const conflict = conflicts.length;
   const hasWork = waiting + failed + conflict > 0;
@@ -81,21 +84,11 @@ export function SyncScreen() {
                     </div>
                 )}
                 {conflict > 0 && <ConflictsList/>}
-                {waiting > 0 && (
-                    <div className="rounded-lg border border-info-border bg-info-soft px-4 py-3 text-sm text-info">
-                      {waiting === 1
-                          ? "1 item is saved on this tablet. It will be sent automatically as soon as the van has signal."
-                          : `${waiting} items are saved on this tablet. They will be sent automatically as soon as the van has signal.`}
-                    </div>
-                )}
-                {failed > 0 && (
-                    <div className="rounded-lg border border-danger-border bg-danger-soft px-4 py-3 text-sm text-danger">
-                      {failed === 1
-                          ? "1 item could not be sent."
-                          : `${failed} items could not be sent.`}{" "}
-                      Your work is still on this tablet.
-                    </div>
-                )}
+                <SyncQueueList
+                    groups={groups}
+                    waiting={waiting}
+                    waitingBytes={waitingBytes}
+                />
               </>
           ) : (
               <div className="rounded-lg border border-success-border bg-success-soft p-4 text-sm text-success">
