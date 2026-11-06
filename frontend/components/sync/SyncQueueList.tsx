@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { QueueItemStatus } from "@/lib/db";
 import type { SyncJobGroup, SyncItem } from "@/lib/services/sync";
 import { formatBytes } from "@/lib/format";
@@ -99,15 +100,25 @@ function SyncQueueRow({ item, onRetry }: { item: QueueRowItem; onRetry: (jobId: 
         )}
 
         {item.status === "failed" && (
-          <button
-            type="button"
-            onClick={() => onRetry(item.jobId)}
-            disabled={sending}
-            aria-label={`Retry ${item.reference}`}
-            className="mt-3 inline-flex min-h-[48px] items-center justify-center rounded-lg border border-border-strong bg-surface px-4 text-md font-medium text-ink hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Retry
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {item.step === "worksheet" && (
+              <Link
+                href={`/jobs/${item.jobId}`}
+                className="inline-flex min-h-[48px] items-center justify-center rounded-lg border border-border-strong bg-surface px-4 text-md font-medium text-ink hover:bg-surface-hover"
+              >
+                Open worksheet
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => onRetry(item.jobId)}
+              disabled={sending}
+              aria-label={`Retry ${item.reference}`}
+              className="inline-flex min-h-[48px] items-center justify-center rounded-lg border border-border-strong bg-surface px-4 text-md font-medium text-ink hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Retry
+            </button>
+          </div>
         )}
       </div>
     </li>
