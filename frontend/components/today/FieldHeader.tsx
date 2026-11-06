@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { DayInfo } from "@/lib/db";
 import { formatDay } from "@/lib/today";
-import { ConnectionBadge } from "@/components/shared/ConnectionBadge";
+import { ConnectionControls } from "@/components/shared/ConnectionControls";
 
 interface FieldHeaderProps {
   day: DayInfo;
@@ -19,7 +19,7 @@ export function FieldHeader({ day, online, pendingCount }: FieldHeaderProps) {
             {day.technician.name} · {day.technician.van}
           </div>
         </div>
-        <ConnectionBadge online={online} />
+        <ConnectionControls online={online} />
       </div>
       {pendingCount > 0 && (
         <div className="flex items-center gap-3 px-4 py-3 border-b border-warning-border bg-warning-soft text-warning text-sm font-medium">

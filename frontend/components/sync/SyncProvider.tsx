@@ -69,6 +69,16 @@ export function SyncProvider() {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     const unsubscribe = subscribeQueueChanges(handleQueueChange);
+    const unsubscribeNetwork = useNetworkStore.subscribe((state, previous) => {
+      if (state.simulatedOffline === previous.simulatedOffline) return;
+
+      if (state.simulatedOffline) {
+        clearTimer();
+        return;
+      }
+
+      void run();
+    });
 
     void run();
 
@@ -76,6 +86,7 @@ export function SyncProvider() {
       disposed = true;
       clearTimer();
       unsubscribe();
+      unsubscribeNetwork();
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };

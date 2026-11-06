@@ -1,3 +1,5 @@
+import { isSimulatedOffline } from "@/lib/network/simulation";
+
 const API_BASE = (
   process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:4000"
 ).replace(/\/+$/, "");
@@ -42,6 +44,10 @@ export async function apiFetch<T>(
   init: RequestInit = {},
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<T> {
+  if (isSimulatedOffline()) {
+    throw new NetworkError("No signal (simulated).");
+  }
+
   const url = `${API_BASE}${path}`;
 
   //Used to be able to cancel the request if it exceeds the maximum waiting time

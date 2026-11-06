@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { JobRecord } from "@/lib/db";
 import { formatTime, plantLabel } from "@/lib/today";
-import { ConnectionBadge } from "@/components/shared/ConnectionBadge";
+import { ConnectionControls } from "@/components/shared/ConnectionControls";
 
 interface WorksheetHeaderProps {
   job: JobRecord;
@@ -36,7 +36,7 @@ export function WorksheetHeader({
             </div>
           </div>
         </div>
-        <ConnectionBadge online={online} />
+        <ConnectionControls online={online} />
       </div>
 
       {job.status === "conflict" ? (

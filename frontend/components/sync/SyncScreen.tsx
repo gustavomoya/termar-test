@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { PageContainer } from "@/components/layout/PageContainer";
 import {useOnlineStatus} from "@/lib/hooks/useOnlineStatus";
-import {ConnectionBadge} from "@/components/shared/ConnectionBadge";
+import {ConnectionControls} from "@/components/shared/ConnectionControls";
 import {useSyncStore} from "@/lib/stores/syncStore";
 import {useEffect} from "react";
 import {ConflictsList} from "@/components/sync/ConflictSection";
@@ -57,7 +57,7 @@ export function SyncScreen() {
                 </div>
               </div>
             </div>
-            <ConnectionBadge online={online}/>
+            <ConnectionControls online={online}/>
           </div>
         </header>
 
@@ -101,6 +101,12 @@ export function SyncScreen() {
                 tablet.
               </div>
           )}
+
+          <div className="rounded-lg border border-info-border bg-info-soft px-4 py-3 text-sm text-info">
+            Nothing here is lost if the tablet is switched off, runs out of
+            battery, or is closed. Everything is sent by itself the moment the
+            van has signal.
+          </div>
         </main>
 
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface shadow-[0_-2px_12px_rgba(16,24,40,0.08)]">
