@@ -1,4 +1,4 @@
-import { listJobs, listQueueItems, listWorksheets, type JobRecord, type JobSyncStatus, type QueueItem,
+import { listJobs, listQueueItems, listWorksheets, type JobRecord, type JobSyncStatus, type QueueErrorKind, type QueueItem,
   type QueueItemStatus, type QueueStep, type WorksheetDraft } from "@/lib/db";
 import { formatTime } from "@/lib/today";
 import { readTodayCache } from "@/lib/services/today";
@@ -30,6 +30,7 @@ export interface SyncItem {
   attempts: number;
   nextAttemptAt?: string;
   lastError?: string;
+  lastErrorKind?: QueueErrorKind;
 }
 
 /**
@@ -106,6 +107,7 @@ function describeItem(
     attempts: item.attempts,
     nextAttemptAt: item.nextAttemptAt,
     lastError: item.lastError,
+    lastErrorKind: item.lastErrorKind,
   };
 }
 

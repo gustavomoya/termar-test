@@ -10,7 +10,7 @@ import {
   markQueueSent,
   scheduleQueueRetry,
 } from "@/lib/sync/outbox";
-import { RejectedError } from "@/lib/sync/errors";
+import { JobGoneError, RejectedError } from "@/lib/sync/errors";
 
 const MAX_SYNC_ATTEMPTS = 7;
 const BASE_RETRY_DELAY_MS = 1000;
@@ -75,7 +75,9 @@ function compareQueueItems(a: QueueItem, b: QueueItem): number {
  * treated as a conflict in the conflict phase
  */
 function isRejected(error: unknown): boolean {
-  if (error instanceof RejectedError) return true;
+  if (error instanceof RejectedError || error instanceof JobGoneError) {
+    return true;
+  }
 
   return (
     error instanceof ApiError &&
@@ -138,17 +140,22 @@ async function processJob(jobId: string): Promise<JobOutcome> {
 
       return "synced";
     } catch (error) {
-      if (isRejected(error) || claimed.attempts >= MAX_SYNC_ATTEMPTS) {
-        await markQueueFailed(jobId, error);
+      const syncError =
+        error instanceof ApiError && error.status === 404
+          ? new JobGoneError()
+          : error;
+
+      if (isRejected(syncError) || claimed.attempts >= MAX_SYNC_ATTEMPTS) {
+        await markQueueFailed(jobId, syncError);
         return "failed";
       }
 
       const nextAttemptAt = new Date(
         Date.now() + retryDelayMs(claimed.attempts),
       ).toISOString();
-      await scheduleQueueRetry(jobId, error, nextAttemptAt);
+      await scheduleQueueRetry(jobId, syncError, nextAttemptAt);
 
-      return error instanceof NetworkError ? "offline" : "retrying";
+      return syncError instanceof NetworkError ? "offline" : "retrying";
     }
   }
 

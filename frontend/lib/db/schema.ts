@@ -21,6 +21,17 @@ export type QueueItemStatus =
   | "conflict"
   | "failed";
 
+/**
+ * Why a queued item stopped being sent. The UI uses this to decide which
+ * recovery actions make sense (a job that no longer exists cannot be retried).
+ */
+export type QueueErrorKind =
+  | "network"
+  | "server"
+  | "rejected"
+  | "gone"
+  | "local";
+
 export type ConflictResolution = "keep_mine" | "keep_other" | "send_both";
 
 /**
@@ -40,6 +51,7 @@ export interface QueueItem {
   lastAttemptAt?: string;
   nextAttemptAt?: string;
   lastError?: string;
+  lastErrorKind?: QueueErrorKind;
   resolution?: QueueConflictResolution;
   conflictWith?: ConflictWith;
   createdAt: string;

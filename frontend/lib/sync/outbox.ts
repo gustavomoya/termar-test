@@ -5,40 +5,73 @@ import {
   patchJob,
   putQueueItem,
   type ConflictWith,
+  type QueueErrorKind,
   type QueueItem,
 } from "@/lib/db";
 import { notifyQueueChanged } from "@/lib/sync/events";
 import { nowLocalIso } from "@/lib/time";
 import { ApiError, NetworkError } from "@/lib/api/client";
+import { JobGoneError, RejectedError } from "@/lib/sync/errors";
+
+interface SyncFailure {
+  message: string;
+  kind: QueueErrorKind;
+}
 
 /**
- * Convert an unknown sync error into a message that can be stored in the queue
+ * Convert an unknown sync error into a message and a kind that can be stored in
+ * the queue. The kind tells the UI which recovery actions are useful.
  *
  * @param error the error raised while syncing
  *
- * @returns a readable error message
+ * @returns a readable message and its category
  */
-function describeError(error: unknown): string {
+function describeError(error: unknown): SyncFailure {
+  if (error instanceof JobGoneError) {
+    return {
+      message:
+        "This job no longer exists at the office. Your worksheet stays on this tablet.",
+      kind: "gone",
+    };
+  }
+
+  if (error instanceof RejectedError) {
+    return { message: error.message, kind: "local" };
+  }
+
   if (error instanceof NetworkError) {
-    return "Could not reach the office. Your work stays on this tablet.";
+    return {
+      message: "Could not reach the office. Your work stays on this tablet.",
+      kind: "network",
+    };
   }
 
   if (error instanceof ApiError) {
     if (error.status === 404) {
-      return "This job no longer exists at the office. Your work stays on this tablet.";
+      return {
+        message:
+          "This job no longer exists at the office. Your worksheet stays on this tablet.",
+        kind: "gone",
+      };
     }
 
     if (error.status >= 500) {
-      return `The office could not accept this worksheet (HTTP ${error.status}). It stays on this tablet; try again in a moment.`;
+      return {
+        message: `The office could not accept this worksheet (HTTP ${error.status}). It stays on this tablet; try again in a moment.`,
+        kind: "server",
+      };
     }
 
-    return `The office rejected this worksheet (HTTP ${error.status}). Open the job, correct it and try again.`;
+    return {
+      message: `The office rejected this worksheet (HTTP ${error.status}). Open the job, correct it and try again.`,
+      kind: "rejected",
+    };
   }
 
-  if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
+  if (error instanceof Error) return { message: error.message, kind: "local" };
+  if (typeof error === "string") return { message: error, kind: "local" };
 
-  return "Sync failed";
+  return { message: "Sync failed", kind: "local" };
 }
 
 export interface EnqueueOptions {
@@ -162,6 +195,7 @@ export async function advanceToStatus(
     lastAttemptAt: undefined,
     nextAttemptAt: undefined,
     lastError: undefined,
+    lastErrorKind: undefined,
     updatedAt: now,
   };
 
@@ -187,10 +221,12 @@ export async function scheduleQueueRetry(
   const item = await getQueueItem(jobId);
   if (!item) return undefined;
 
+  const failure = describeError(error);
   const next: QueueItem = {
     ...item,
     status: "pending",
-    lastError: describeError(error),
+    lastError: failure.message,
+    lastErrorKind: failure.kind,
     nextAttemptAt,
     updatedAt: nowLocalIso(),
   };
@@ -216,10 +252,12 @@ export async function markQueueFailed(
   const item = await getQueueItem(jobId);
   if (!item) return undefined;
 
+  const failure = describeError(error);
   const next: QueueItem = {
     ...item,
     status: "failed",
-    lastError: describeError(error),
+    lastError: failure.message,
+    lastErrorKind: failure.kind,
     nextAttemptAt: undefined,
     updatedAt: nowLocalIso(),
   };
@@ -241,6 +279,7 @@ export async function retryQueueItem(jobId: string): Promise<QueueItem | undefin
     status: "pending",
     attempts: 0,
     lastError: undefined,
+    lastErrorKind: undefined,
     nextAttemptAt: undefined,
     updatedAt: now,
   };
@@ -270,6 +309,8 @@ export async function markQueueConflict(
   const next: QueueItem = {
     ...item,
     status: "conflict",
+    lastError: undefined,
+    lastErrorKind: undefined,
     nextAttemptAt: undefined,
     updatedAt: nowLocalIso(),
   };

@@ -109,15 +109,17 @@ function SyncQueueRow({ item, onRetry }: { item: QueueRowItem; onRetry: (jobId: 
                 Open worksheet
               </Link>
             )}
-            <button
-              type="button"
-              onClick={() => onRetry(item.jobId)}
-              disabled={sending}
-              aria-label={`Retry ${item.reference}`}
-              className="inline-flex min-h-[48px] items-center justify-center rounded-lg border border-border-strong bg-surface px-4 text-md font-medium text-ink hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Retry
-            </button>
+            {item.lastErrorKind !== "gone" && (
+              <button
+                type="button"
+                onClick={() => onRetry(item.jobId)}
+                disabled={sending}
+                aria-label={`Retry ${item.reference}`}
+                className="inline-flex min-h-[48px] items-center justify-center rounded-lg border border-border-strong bg-surface px-4 text-md font-medium text-ink hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Retry
+              </button>
+            )}
           </div>
         )}
       </div>
