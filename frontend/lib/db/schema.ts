@@ -1,7 +1,7 @@
 import type { DBSchema, IDBPDatabase } from "idb";
 
 export const DB_NAME = "termar-field";
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 
 export type PlantType = "gas_boiler" | "chiller";
 export type JobPriority = "low" | "normal" | "high";
@@ -162,6 +162,22 @@ export interface WorksheetPhotoMeta {
   caption: string;
   capturedAt: string;
   uploaded: boolean;
+  sizeBytes?: number;
+}
+
+
+export interface PhotoRecord {
+  id: string;
+  jobId: string;
+  caption: string;
+  capturedAt: string;
+  mime: string;
+  width: number;
+  height: number;
+  sizeBytes: number;
+  blob: Blob;
+  thumbBlob: Blob;
+  uploaded: boolean;
 }
 
 export interface Signature {
@@ -222,6 +238,13 @@ export interface TermarDB extends DBSchema {
     key: string;
     value: StoredStockItem;
   };
+  photos: {
+    key: string;
+    value: PhotoRecord;
+    indexes: {
+      "by-jobId": string;
+    };
+  };
   queue: {
     key: string;
     value: QueueItem;
@@ -262,6 +285,10 @@ const migrations: Record<number, Migration> = {
     const archive = db.createObjectStore("archive", { keyPath: "id" });
     archive.createIndex("by-jobId", "jobId");
     archive.createIndex("by-archivedAt", "archivedAt");
+  },
+  5: (db) => {
+    const photos = db.createObjectStore("photos", { keyPath: "id" });
+    photos.createIndex("by-jobId", "jobId");
   },
 };
 
