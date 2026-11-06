@@ -26,6 +26,8 @@ export interface RemoteWorksheetPhoto {
   caption: string;
   capturedAt: string;
   uploaded: boolean;
+  sizeBytes?: number;
+  dataUrl?: string;
 }
 
 export interface RemoteWorksheetSignature {

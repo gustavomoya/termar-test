@@ -5,13 +5,17 @@ import {
   fetchVanStock,
   fetchWorksheet,
   type RemoteWorksheet,
+  type RemoteWorksheetPhoto,
 } from "@/lib/api/worksheet";
 import {
   getJob,
   getTemplate,
   getWorksheet,
+  listPhotosByJob,
   listStock,
   listWorksheets,
+  markPhotosUploaded,
+  markWorksheetPhotosUploaded as markStoredWorksheetPhotosUploaded,
   putJobs,
   putTemplate,
   putWorksheet,
@@ -20,11 +24,14 @@ import {
   type ChecklistTemplate,
   type JobRecord,
   type PartUsed,
+  type PhotoRecord,
   type StoredStockItem,
   type StoredTemplate,
   type VanStockItem,
   type WorksheetDraft,
+  type WorksheetPhotoMeta,
 } from "@/lib/db";
+import { blobToDataUrl } from "@/lib/worksheet/photos";
 import { nowLocalIso } from "@/lib/time";
 
 export interface WorksheetSnapshot {
@@ -33,6 +40,7 @@ export interface WorksheetSnapshot {
   stock: StoredStockItem[];
   stockUsage: Record<string, number>;
   draft: WorksheetDraft;
+  photos: PhotoRecord[];
   readOnly: boolean;
   savedAt?: string;
 }
@@ -130,6 +138,19 @@ function createInitialDraft(
 }
 
 /**
+ * Keep only the metadata of a remote photo
+ */
+function mapRemotePhoto(photo: RemoteWorksheetPhoto): WorksheetPhotoMeta {
+  return {
+    id: photo.id,
+    caption: photo.caption,
+    capturedAt: photo.capturedAt,
+    uploaded: photo.uploaded,
+    ...(photo.sizeBytes ? { sizeBytes: photo.sizeBytes } : {}),
+  };
+}
+
+/**
  * Map a worksheet received from the backend to the local draft worksheet.
  * Template items are seeded first and then overwritten with remote answers.
  *
@@ -195,7 +216,7 @@ function mapRemoteWorksheetToDraft(
     stoppedAt: remote.stoppedAt,
     checks,
     parts,
-    photos: (remote.photos ?? []).map((photo) => ({ ...photo })),
+    photos: (remote.photos ?? []).map(mapRemotePhoto),
     signature: remote.signature
       ? {
           signedBy: remote.signature.signedBy,
@@ -369,7 +390,24 @@ async function resolveWorksheetDraft(
   templateItems: ChecklistTemplate["items"],
 ): Promise<{ draft: WorksheetDraft; savedAt?: string }> {
   if (localDraft) {
-    return { draft: localDraft, savedAt: localDraft.updatedAt };
+    // A draft saved before the photos feature (or before the office sent the
+    // photos) must still show the photos that already exist on the backend
+    const localIds = new Set(localDraft.photos.map((photo) => photo.id));
+    const missingPhotos = (remoteWorksheet?.photos ?? [])
+      .filter((photo) => !localIds.has(photo.id))
+      .map(mapRemotePhoto);
+
+    if (missingPhotos.length === 0) {
+      return { draft: localDraft, savedAt: localDraft.updatedAt };
+    }
+
+    return {
+      draft: {
+        ...localDraft,
+        photos: [...localDraft.photos, ...missingPhotos],
+      },
+      savedAt: localDraft.updatedAt,
+    };
   }
 
   if (remoteWorksheet) {
@@ -438,6 +476,7 @@ export async function loadWorksheet(
     localTemplate: getTemplate(job.plantType),
     localStock: listStock(),
     localDrafts: listWorksheets(),
+    localPhotos: listPhotosByJob(jobId),
   });
 
   const template = await loadTemplate(
@@ -469,6 +508,7 @@ export async function loadWorksheet(
       draft,
     ),
     draft,
+    photos: settledValue(sources.localPhotos) ?? [],
     readOnly,
     savedAt,
   };
@@ -483,4 +523,51 @@ export async function saveWorksheetDraft(
   const next = { ...draft, updatedAt: nowLocalIso() };
   await putWorksheet(next);
   return next;
+}
+
+/**
+ * Build the payload for the backend, embedding each photo binary as a data URL
+ *
+ * The helper backend has no photo endpoint, so the images travel inside the
+ * worksheet PUT. Photos that exist only in a remote worksheet (never downloaded
+ * here) keep their metadata and are sent without binary data
+ */
+export async function prepareWorksheetUpload(
+  jobId: string,
+  conflict?: RemoteWorksheet["conflict"],
+): Promise<RemoteWorksheet> {
+  const [draft, photos] = await Promise.all([
+    getWorksheet(jobId),
+    listPhotosByJob(jobId),
+  ]);
+
+  if (!draft) throw new Error("Worksheet not found");
+
+  const dataUrls = new Map<string, string>();
+  await Promise.all(
+    photos.map(async (photo) => {
+      dataUrls.set(photo.id, await blobToDataUrl(photo.blob));
+    }),
+  );
+
+  const remote = mapDraftToRemoteWorksheet(draft, conflict);
+  if (!remote.photos?.length) return remote;
+
+  return {
+    ...remote,
+    photos: remote.photos.map((photo) => {
+      const dataUrl = dataUrls.get(photo.id);
+      return dataUrl ? { ...photo, dataUrl } : photo;
+    }),
+  };
+}
+
+/**
+ * Mark the worksheet photos as received by the office after a successful PUT
+ */
+export async function markWorksheetPhotosUploaded(jobId: string): Promise<void> {
+  await Promise.all([
+    markPhotosUploaded(jobId),
+    markStoredWorksheetPhotosUploaded(jobId),
+  ]);
 }

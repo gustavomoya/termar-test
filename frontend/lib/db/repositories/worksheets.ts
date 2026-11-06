@@ -2,7 +2,7 @@ import { getDB } from "@/lib/db/idb";
 import type { WorksheetDraft } from "@/lib/db";
 
 /**
- * Get worksheet by job.
+ * Get worksheet by job
  *
  * @param jobId the job identifier
  */
@@ -14,7 +14,7 @@ export async function getWorksheet(
 }
 
 /**
- * Save a worksheet.
+ * Save a worksheet
  *
  * @param draft the worksheet to persist
  */
@@ -32,11 +32,36 @@ export async function listWorksheets(): Promise<WorksheetDraft[]> {
 }
 
 /**
- * Remove a worksheet.
+ * Remove a worksheet
  *
  * @param jobId the job identifier
  */
 export async function deleteWorksheet(jobId: string): Promise<void> {
   const db = await getDB();
   await db.delete("worksheets", jobId);
+}
+
+/**
+ * Mark the photos referenced by a worksheet as received by the office
+ *
+ * Uses one transaction so a background upload cannot overwrite edits made at
+ * the same time
+ *
+ * @param jobId the job identifier
+ */
+export async function markWorksheetPhotosUploaded(
+  jobId: string,
+): Promise<void> {
+  const db = await getDB();
+  const transaction = db.transaction("worksheets", "readwrite");
+  const draft = await transaction.store.get(jobId);
+
+  if (draft) {
+    await transaction.store.put({
+      ...draft,
+      photos: draft.photos.map((photo) => ({ ...photo, uploaded: true })),
+    });
+  }
+
+  await transaction.done;
 }

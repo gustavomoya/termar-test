@@ -2,17 +2,24 @@ import { create } from "zustand";
 import type {
   CheckResult,
   JobRecord,
+  PhotoRecord,
   Signature,
   StoredStockItem,
   StoredTemplate,
   WorksheetDraft,
 } from "@/lib/db";
-import { getJob } from "@/lib/db";
+import { deletePhoto, getJob, putPhoto } from "@/lib/db";
 import { loadWorksheet, saveWorksheetDraft } from "@/lib/services/worksheet";
 import { flushQueue } from "@/lib/sync/engine";
 import { enqueueWorksheet } from "@/lib/sync/outbox";
 import { useNetworkStore } from "@/lib/stores/networkStore";
 import { nowLocalIso } from "@/lib/time";
+import {
+  captionFromFile,
+  MAX_PHOTOS,
+  newPhotoId,
+  processPhoto,
+} from "@/lib/worksheet/photos";
 import { validateFinish } from "@/lib/worksheet/validation";
 
 /**
@@ -29,6 +36,9 @@ interface WorksheetState {
   stock: StoredStockItem[];
   stockUsage: Record<string, number>;
   draft?: WorksheetDraft;
+  photos: PhotoRecord[];
+  photoBusy: boolean;
+  photoError?: string;
   readOnly: boolean;
   loading: boolean;
   saving: boolean;
@@ -48,6 +58,8 @@ interface WorksheetState {
   addPart: (item: StoredStockItem) => void;
   decrementPart: (sku: string) => void;
   removePart: (sku: string) => void;
+  addPhoto: (file: File) => Promise<void>;
+  removePhoto: (id: string) => Promise<void>;
   setSignature: (signature: Signature) => void;
   clearSignature: () => void;
   finish: () => Promise<{ ok: boolean; errors: string[] }>;
@@ -123,6 +135,8 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
   return {
     stock: [],
     stockUsage: {},
+    photos: [],
+    photoBusy: false,
     readOnly: false,
     loading: false,
     saving: false,
@@ -141,6 +155,9 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
         stock: [],
         stockUsage: {},
         draft: undefined,
+        photos: [],
+        photoBusy: false,
+        photoError: undefined,
         readOnly: false,
         loading: true,
         saving: false,
@@ -158,6 +175,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
           stock: snapshot.stock,
           stockUsage: snapshot.stockUsage,
           draft: snapshot.draft,
+          photos: snapshot.photos,
           readOnly: snapshot.readOnly,
           lastSavedAt: snapshot.savedAt,
           loading: false,
@@ -407,6 +425,98 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
         finishErrors: [],
       });
       scheduleSave();
+    },
+
+    /**
+     * Compress and store a photo taken with the tablet camera
+     *
+     * The binary goes to the photos store and the worksheet only keeps its
+     * metadata
+     *
+     * @param file the image chosen by the technician
+     */
+    addPhoto: async (file) => {
+      const draft = get().draft;
+      if (!draft || get().readOnly || get().photoBusy) return;
+
+      if (draft.photos.length >= MAX_PHOTOS) {
+        set({
+          photoError: `This tablet can send up to ${MAX_PHOTOS} photos per job.`,
+        });
+        return;
+      }
+
+      set({ photoBusy: true, photoError: undefined });
+
+      try {
+        const processed = await processPhoto(file);
+        const capturedAt = nowLocalIso();
+        const caption = captionFromFile(file);
+        const record: PhotoRecord = {
+          id: newPhotoId(),
+          jobId: draft.jobId,
+          caption,
+          capturedAt,
+          mime: processed.mime,
+          width: processed.width,
+          height: processed.height,
+          sizeBytes: processed.sizeBytes,
+          blob: processed.blob,
+          thumbBlob: processed.thumbBlob,
+          uploaded: false,
+        };
+
+        await putPhoto(record);
+        set({ photos: [...get().photos, record] });
+
+        updateDraft((current) => ({
+          ...current,
+          photos: [
+            ...current.photos,
+            {
+              id: record.id,
+              caption,
+              capturedAt,
+              uploaded: false,
+              sizeBytes: record.sizeBytes,
+            },
+          ],
+        }));
+      } catch (error) {
+        set({
+          photoError:
+            error instanceof Error
+              ? error.message
+              : "Could not save the photo on this tablet.",
+        });
+      } finally {
+        set({ photoBusy: false });
+      }
+    },
+
+    /**
+     * Delete a photo from the tablet.
+     *
+     * @param id the photo identifier
+     */
+    removePhoto: async (id) => {
+      if (get().readOnly) return;
+
+      try {
+        await deletePhoto(id);
+        set({ photos: get().photos.filter((photo) => photo.id !== id) });
+        updateDraft((draft) => ({
+          ...draft,
+          photos: draft.photos.filter((photo) => photo.id !== id),
+        }));
+      } catch (error) {
+        set({
+          photoError:
+            error instanceof Error
+              ? error.message
+              : "Could not delete the photo.",
+        });
+      }
     },
 
     /**

@@ -11,6 +11,7 @@ import { WorksheetLoading } from "@/components/worksheet/WorksheetLoading";
 import { TimerSection } from "@/components/worksheet/TimerSection";
 import { ChecklistSection } from "@/components/worksheet/ChecklistSection";
 import { PartsSection } from "@/components/worksheet/PartsSection";
+import { PhotosSection } from "@/components/worksheet/PhotosSection";
 import { SignatureSection } from "@/components/worksheet/SignatureSection";
 import { WorksheetActionBar } from "@/components/worksheet/WorksheetActionBar";
 import {
@@ -139,6 +140,7 @@ export function WorksheetScreen({ jobId }: WorksheetScreenProps) {
         <TimerSection />
         <ChecklistSection />
         <PartsSection />
+        <PhotosSection />
         <SignatureSection />
       </main>
       <WorksheetActionBar readOnly={readOnly} />

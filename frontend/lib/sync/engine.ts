@@ -2,7 +2,11 @@ import { ApiError, NetworkError } from "@/lib/api/client";
 import { setJobStatus, uploadWorksheet } from "@/lib/api/worksheet";
 import { getQueueItem, getWorksheet, listQueueItems } from "@/lib/db";
 import type { QueueItem } from "@/lib/db";
-import { mapDraftToRemoteWorksheet } from "@/lib/services/worksheet";
+import {
+  markWorksheetPhotosUploaded,
+  prepareWorksheetUpload,
+} from "@/lib/services/worksheet";
+import { MAX_TOTAL_PHOTO_UPLOAD_BYTES } from "@/lib/worksheet/photos";
 import {
   advanceToStatus,
   markQueueFailed,
@@ -123,10 +127,15 @@ async function processJob(jobId: string): Promise<JobOutcome> {
             }
           : undefined;
 
-        await uploadWorksheet(
-          jobId,
-          mapDraftToRemoteWorksheet(draft, conflict),
-        );
+        const payload = await prepareWorksheetUpload(jobId, conflict);
+        if (JSON.stringify(payload).length > MAX_TOTAL_PHOTO_UPLOAD_BYTES) {
+          throw new RejectedError(
+            "There are too many photos to send in one worksheet. Open the job and remove some photos.",
+          );
+        }
+
+        await uploadWorksheet(jobId, payload);
+        await markWorksheetPhotosUploaded(jobId);
 
         const advanced = await advanceToStatus(jobId);
         if (!advanced) return "skipped";
