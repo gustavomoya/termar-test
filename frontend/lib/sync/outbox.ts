@@ -19,8 +19,22 @@ import { ApiError, NetworkError } from "@/lib/api/client";
  * @returns a readable error message
  */
 function describeError(error: unknown): string {
-  if (error instanceof NetworkError) return "Could not reach the office.";
-  if (error instanceof ApiError) return `The office rejected the upload (HTTP ${error.status}).`;
+  if (error instanceof NetworkError) {
+    return "Could not reach the office. Your work stays on this tablet.";
+  }
+
+  if (error instanceof ApiError) {
+    if (error.status === 404) {
+      return "This job no longer exists at the office. Your work stays on this tablet.";
+    }
+
+    if (error.status >= 500) {
+      return `The office could not accept this worksheet (HTTP ${error.status}). It stays on this tablet; try again in a moment.`;
+    }
+
+    return `The office rejected this worksheet (HTTP ${error.status}). Open the job, correct it and try again.`;
+  }
+
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
 
