@@ -8,6 +8,7 @@ import {useSyncStore} from "@/lib/stores/syncStore";
 import {useEffect} from "react";
 import {ConflictsList} from "@/components/sync/ConflictSection";
 import {SyncQueueList} from "@/components/sync/SyncQueueList";
+import {primaryButtonClass, secondaryButtonClass} from "@/components/worksheet/styles";
 
 /**
  * Sync screen
@@ -21,6 +22,8 @@ export function SyncScreen() {
   const sendError = useSyncStore((state) => state.sendError);
   const hydrate = useSyncStore((state) => state.hydrate);
   const retryJob = useSyncStore((state) => state.retryJob);
+  const sendNow = useSyncStore((state) => state.sendNow);
+  const sending = useSyncStore((state) => state.sending);
 
   useEffect(() => {
     void hydrate();
@@ -99,6 +102,26 @@ export function SyncScreen() {
               </div>
           )}
         </main>
+
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface shadow-[0_-2px_12px_rgba(16,24,40,0.08)]">
+          <div className="mx-auto flex w-full max-w-[880px] gap-2 p-4">
+            <Link href="/" className={secondaryButtonClass}>
+              Back to jobs
+            </Link>
+            <button
+                type="button"
+                onClick={() => void sendNow()}
+                disabled={!online || sending || waiting === 0}
+                className={`${primaryButtonClass} flex-1`}
+            >
+              {!online
+                  ? "Try sending now — no signal"
+                  : sending
+                      ? "Sending…"
+                      : "Try sending now"}
+            </button>
+          </div>
+        </div>
       </PageContainer>
   );
 }

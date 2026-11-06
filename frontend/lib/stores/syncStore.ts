@@ -22,6 +22,7 @@ import {
 import { enqueueStatus, enqueueWorksheet, retryQueueItem } from "@/lib/sync/outbox";
 import { flushQueue } from "@/lib/sync/engine";
 import { useDayStore } from "@/lib/stores/dayStore";
+import { useNetworkStore } from "@/lib/stores/networkStore";
 import { nowLocalIso } from "@/lib/time";
 
 export type ConflictDecision = "mine" | "other" | "both";
@@ -37,6 +38,7 @@ interface SyncState {
   hydrate: () => Promise<void>;
   refresh: () => Promise<void>;
   retryJob: (jobId: string) => Promise<void>;
+  sendNow: () => Promise<void>;
   resolveConflict: (jobId: string, decision: ConflictDecision) => Promise<void>;
 }
 
@@ -284,6 +286,38 @@ export const useSyncStore = create<SyncState>((set, get) => {
         set({
           sending: false,
           sendError: errorMessage(error, "Could not retry the upload."),
+        });
+      }
+    },
+
+    sendNow: async () => {
+      if (get().sending) return;
+
+      if (!useNetworkStore.getState().online) {
+        set({
+          sendError:
+            "There is no signal right now. Your work stays on this tablet.",
+        });
+        return;
+      }
+
+      set({ sending: true, sendError: undefined });
+
+      try {
+        const result = await flushQueue({ force: true });
+        await reloadAfterDecision();
+
+        set({
+          sending: false,
+          sendError:
+            result.retrying > 0
+              ? "Could not reach the office. Your work stays on this tablet and will be sent automatically."
+              : undefined,
+        });
+      } catch (error) {
+        set({
+          sending: false,
+          sendError: errorMessage(error, "Could not send right now."),
         });
       }
     },
