@@ -19,7 +19,7 @@ import {
   type QueueConflictResolution,
   type WorksheetDraft,
 } from "@/lib/db";
-import { enqueueStatus, enqueueWorksheet } from "@/lib/sync/outbox";
+import { enqueueStatus, enqueueWorksheet, retryQueueItem } from "@/lib/sync/outbox";
 import { flushQueue } from "@/lib/sync/engine";
 import { useDayStore } from "@/lib/stores/dayStore";
 import { nowLocalIso } from "@/lib/time";
@@ -36,6 +36,7 @@ interface SyncState {
 
   hydrate: () => Promise<void>;
   refresh: () => Promise<void>;
+  retryJob: (jobId: string) => Promise<void>;
   resolveConflict: (jobId: string, decision: ConflictDecision) => Promise<void>;
 }
 
@@ -248,6 +249,41 @@ export const useSyncStore = create<SyncState>((set, get) => {
         set({
           sending: false,
           sendError: errorMessage(error, "Could not resolve the conflict."),
+        });
+      }
+    },
+
+    /**
+     * Reset a failed upload so the next flush retries the same worksheet.
+     *
+     * The worksheet itself is never deleted - only the queue item is reset
+     * from `failed` back to `pending` with a clean attempt counter, so the
+     * technician can keep working on the tablet if the office rejects the
+     * upload later.
+     *
+     * @param jobId the job whose upload failed
+     */
+    retryJob: async (jobId) => {
+      if (get().sending) return;
+
+      set({ sending: true, sendError: undefined });
+
+      try {
+        await retryQueueItem(jobId);
+        const result = await flushQueue({ force: true });
+        await reloadAfterDecision();
+
+        set({
+          sending: false,
+          sendError:
+            result.retrying > 0
+              ? "Could not reach the office. Your worksheet stays on this tablet and will be sent automatically."
+              : undefined,
+        });
+      } catch (error) {
+        set({
+          sending: false,
+          sendError: errorMessage(error, "Could not retry the upload."),
         });
       }
     },

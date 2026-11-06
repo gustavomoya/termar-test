@@ -2,6 +2,7 @@ import type { QueueItemStatus } from "@/lib/db";
 import type { SyncJobGroup, SyncItem } from "@/lib/services/sync";
 import { formatBytes } from "@/lib/format";
 import { formatTime } from "@/lib/today";
+import { useSyncStore } from "@/lib/stores/syncStore";
 
 const STEP_ICON: Record<string, string> = {
   worksheet: "▤",
@@ -43,6 +44,7 @@ interface SyncQueueListProps {
   groups: SyncJobGroup[];
   waiting: number;
   waitingBytes: number;
+  onRetry: (jobId: string) => void;
 }
 
 function attemptsLabel(attempts: number): string {
@@ -51,8 +53,9 @@ function attemptsLabel(attempts: number): string {
   return `${attempts} attempt${attempts === 1 ? "" : "s"}`;
 }
 
-function SyncQueueRow({ item }: { item: QueueRowItem }) {
+function SyncQueueRow({ item, onRetry }: { item: QueueRowItem; onRetry: (jobId: string) => void }) {
   const status = STATUS_META[item.status];
+  const sending = useSyncStore((state) => state.sending);
 
   return (
     <li className="flex items-start gap-3 px-4 py-3">
@@ -94,6 +97,18 @@ function SyncQueueRow({ item }: { item: QueueRowItem }) {
             {item.lastError}
           </p>
         )}
+
+        {item.status === "failed" && (
+          <button
+            type="button"
+            onClick={() => onRetry(item.jobId)}
+            disabled={sending}
+            aria-label={`Retry ${item.reference}`}
+            className="mt-3 inline-flex min-h-[48px] items-center justify-center rounded-lg border border-border-strong bg-surface px-4 text-md font-medium text-ink hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Retry
+          </button>
+        )}
       </div>
     </li>
   );
@@ -108,6 +123,7 @@ export function SyncQueueList({
   groups,
   waiting,
   waitingBytes,
+  onRetry,
 }: SyncQueueListProps) {
   const items: QueueRowItem[] = groups.flatMap((group) =>
     group.items.map((item) => ({
@@ -134,7 +150,11 @@ export function SyncQueueList({
 
       <ul className="divide-y divide-border">
         {items.map((item) => (
-          <SyncQueueRow key={`${item.jobId}-${item.step}`} item={item} />
+          <SyncQueueRow
+            key={`${item.jobId}-${item.step}`}
+            item={item}
+            onRetry={onRetry}
+          />
         ))}
       </ul>
     </section>

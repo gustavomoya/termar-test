@@ -9,6 +9,7 @@ import {
 } from "@/lib/db";
 import { notifyQueueChanged } from "@/lib/sync/events";
 import { nowLocalIso } from "@/lib/time";
+import { ApiError, NetworkError } from "@/lib/api/client";
 
 /**
  * Convert an unknown sync error into a message that can be stored in the queue
@@ -18,6 +19,8 @@ import { nowLocalIso } from "@/lib/time";
  * @returns a readable error message
  */
 function describeError(error: unknown): string {
+  if (error instanceof NetworkError) return "Could not reach the office.";
+  if (error instanceof ApiError) return `The office rejected the upload (HTTP ${error.status}).`;
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
 
@@ -210,6 +213,27 @@ export async function markQueueFailed(
   await putQueueItem(next);
   notifyQueueChanged();
   await patchJob(jobId, { status: "failed", queuedItems: 1 });
+
+  return next;
+}
+
+export async function retryQueueItem(jobId: string): Promise<QueueItem | undefined> {
+  const item = await getQueueItem(jobId);
+  if (!item) return undefined;
+
+  const now = nowLocalIso();
+  const next: QueueItem = {
+    ...item,
+    status: "pending",
+    attempts: 0,
+    lastError: undefined,
+    nextAttemptAt: undefined,
+    updatedAt: now,
+  };
+
+  await putQueueItem(next);
+  notifyQueueChanged();
+  await patchJob(jobId, { status: "queued", queuedItems: 1 });
 
   return next;
 }

@@ -20,6 +20,7 @@ export function SyncScreen() {
   const error = useSyncStore((state) => state.error);
   const sendError = useSyncStore((state) => state.sendError);
   const hydrate = useSyncStore((state) => state.hydrate);
+  const retryJob = useSyncStore((state) => state.retryJob);
 
   useEffect(() => {
     void hydrate();
@@ -88,6 +89,7 @@ export function SyncScreen() {
                     groups={groups}
                     waiting={waiting}
                     waitingBytes={waitingBytes}
+                    onRetry={retryJob}
                 />
               </>
           ) : (
