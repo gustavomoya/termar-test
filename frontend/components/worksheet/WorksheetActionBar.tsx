@@ -22,6 +22,9 @@ export function WorksheetActionBar({ readOnly }: WorksheetActionBarProps) {
     setBusy(true);
     const saved = await flush();
     if (saved) {
+      // Clear the busy flag before leaving: the App Router can restore this
+      // route from its client cache with the component state intact.
+      setBusy(false);
       router.push("/");
     } else {
       setBusy(false);
@@ -37,6 +40,7 @@ export function WorksheetActionBar({ readOnly }: WorksheetActionBarProps) {
       return;
     }
 
+    setBusy(false);
     router.push("/");
   };
 
