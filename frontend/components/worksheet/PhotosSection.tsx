@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PhotoRecord, WorksheetPhotoMeta } from "@/lib/db";
 import { useWorksheetStore } from "@/lib/stores/worksheetStore";
 import { Section } from "@/components/worksheet/Section";
@@ -9,19 +9,32 @@ import { MAX_PHOTOS } from "@/lib/worksheet/photos";
 /**
  * Create and revoke an object URL for a photo thumbnail.
  *
+ * The URL is created inside the effect (not in useMemo) so React Strict Mode's
+ * mount → cleanup → remount cycle gets a fresh URL instead of revoking the only
+ * one and leaving the <img> broken.
+ *
  * @param blob the thumbnail binary
  */
 function useObjectUrl(blob: Blob | undefined): string | undefined {
-  const url = useMemo(
-    () => (blob ? URL.createObjectURL(blob) : undefined),
-    [blob],
-  );
+  const [url, setUrl] = useState<string>();
 
   useEffect(() => {
-    if (!url) return;
+    if (!blob) {
+      const timer = setTimeout(() => setUrl(undefined), 0);
+      return () => clearTimeout(timer);
+    }
 
-    return () => URL.revokeObjectURL(url);
-  }, [url]);
+    const next = URL.createObjectURL(blob);
+    // Defer the state update so it is not a synchronous write inside the
+    // effect; Strict Mode's mount → cleanup → remount cycle still gets a
+    // fresh URL because the cleanup revokes the previous one.
+    const timer = setTimeout(() => setUrl(next), 0);
+
+    return () => {
+      clearTimeout(timer);
+      URL.revokeObjectURL(next);
+    };
+  }, [blob]);
 
   return url;
 }
@@ -52,7 +65,6 @@ function PhotoTile({
           <img
             src={thumbUrl}
             alt={meta.caption}
-            loading="lazy"
             className="absolute inset-0 h-full w-full object-cover"
           />
         )}

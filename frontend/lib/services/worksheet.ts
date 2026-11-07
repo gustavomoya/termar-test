@@ -9,6 +9,7 @@ import {
 } from "@/lib/api/worksheet";
 import {
   getJob,
+  getQueueItem,
   getTemplate,
   getWorksheet,
   listPhotosByJob,
@@ -25,6 +26,7 @@ import {
   type JobRecord,
   type PartUsed,
   type PhotoRecord,
+  type QueueItem,
   type StoredStockItem,
   type StoredTemplate,
   type VanStockItem,
@@ -441,10 +443,12 @@ export async function loadWorksheet(
   // get local data
   let localJob: JobRecord | undefined;
   let localDraft: WorksheetDraft | undefined;
+  let localQueue: QueueItem | undefined;
   try {
-    [localJob, localDraft] = await Promise.all([
+    [localJob, localDraft, localQueue] = await Promise.all([
       getJob(jobId),
       getWorksheet(jobId),
+      getQueueItem(jobId),
     ]);
   } catch {
   }
@@ -454,19 +458,32 @@ export async function loadWorksheet(
   try {
     const fetched = await fetchJob(jobId);
     remoteJob = { ...fetched, cachedAt: nowLocalIso() };
-    try {
-      //save job in db
-      await putJobs([remoteJob]);
-    } catch {
-
-    }
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) throw error;
     if (!localJob) throw error;
   }
 
-  const job = remoteJob ?? localJob;
+  // Local work (a draft or a queued item) keeps the sync status known by this
+  // tablet. Otherwise a refresh from the office would turn "On this tablet
+  // only" back into "Not started" and lock a worksheet that still has work
+  const hasLocalWork = Boolean(localDraft) || Boolean(localQueue);
+  const job =
+    remoteJob && localJob && hasLocalWork
+      ? {
+          ...remoteJob,
+          status: localJob.status,
+          localOnly: localJob.localOnly,
+          syncedAt: localJob.syncedAt,
+          queuedItems: localJob.queuedItems,
+          conflictWith: localJob.conflictWith,
+        }
+      : remoteJob ?? localJob;
   if (!job) throw new Error("Job not found");
+
+  try {
+    await putJobs([job]);
+  } catch {
+  }
 
   //Remote and local request. Each request is handled separately
   const sources = await settleAll({

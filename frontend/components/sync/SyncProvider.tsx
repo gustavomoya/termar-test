@@ -5,6 +5,10 @@ import { useDayStore } from "@/lib/stores/dayStore";
 import { useNetworkStore } from "@/lib/stores/networkStore";
 import { flushQueue, getNextSyncAt } from "@/lib/sync/engine";
 import { subscribeQueueChanges } from "@/lib/sync/events";
+import {
+  readStoredSimulatedOffline,
+  SIMULATED_OFFLINE_STORAGE_KEY,
+} from "@/lib/network/simulation";
 
 /**
  * Runs the sync engine when the app starts, when the network comes back and
@@ -68,10 +72,23 @@ export function SyncProvider() {
       void run();
     };
 
+    // The demo's simulated signal lives in localStorage so every tab and a
+    // reload see the same state. Restore it before the first sync attempt.
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== SIMULATED_OFFLINE_STORAGE_KEY) return;
+      useNetworkStore
+        .getState()
+        .setSimulatedOffline(event.newValue === "true");
+    };
+
+    useNetworkStore
+      .getState()
+      .setSimulatedOffline(readStoredSimulatedOffline());
     useNetworkStore.getState().setOnline(navigator.onLine);
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+    window.addEventListener("storage", handleStorage);
     const unsubscribe = subscribeQueueChanges(handleQueueChange);
     const unsubscribeNetwork = useNetworkStore.subscribe((state, previous) => {
       if (state.simulatedOffline === previous.simulatedOffline) return;
@@ -93,6 +110,7 @@ export function SyncProvider() {
       unsubscribeNetwork();
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("storage", handleStorage);
     };
   }, []);
 

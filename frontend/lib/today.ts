@@ -66,7 +66,3 @@ export function dayStats(jobs: JobRecord[]) {
     conflict: counts.conflict,
   };
 }
-
-export function pendingItemCount(jobs: JobRecord[]): number {
-  return jobs.reduce((total, job) => total + (job.queuedItems ?? 0), 0);
-}

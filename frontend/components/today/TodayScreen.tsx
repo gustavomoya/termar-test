@@ -2,11 +2,10 @@
 
 import { useEffect } from "react";
 import { useDayStore } from "@/lib/stores/dayStore";
-import { useNetworkStore } from "@/lib/stores/networkStore";
+import { useOnlineStatus } from "@/lib/hooks/useOnlineStatus";
 import {
   formatTime,
   nextJob,
-  pendingItemCount,
   shortSite,
 } from "@/lib/today";
 import { FieldHeader } from "./FieldHeader";
@@ -14,26 +13,21 @@ import { JobList } from "./JobList";
 import { ActionBar } from "./ActionBar";
 
 export function TodayScreen() {
-  const { day, jobs, error, hydrate, refresh } = useDayStore();
-  const { online, setOnline } = useNetworkStore();
+  const { day, jobs, pendingCount, error, hydrate, refresh } = useDayStore();
+  const online = useOnlineStatus();
 
   useEffect(() => {
-    setOnline(navigator.onLine);
     hydrate();
 
     const handleOnline = () => {
-      setOnline(true);
       refresh();
     };
-    const handleOffline = () => setOnline(false);
 
     window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
     return () => {
       window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
     };
-  }, [hydrate, refresh, setOnline]);
+  }, [hydrate, refresh]);
 
   if (error && !day) {
     return (
@@ -60,7 +54,6 @@ export function TodayScreen() {
     );
   }
 
-  const pendingCount = pendingItemCount(jobs);
   const next = nextJob(jobs);
 
   return (

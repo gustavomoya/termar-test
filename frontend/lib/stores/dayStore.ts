@@ -5,6 +5,7 @@ import { readTodayCache, loadToday } from "@/lib/services/today";
 interface DayState {
   day: DayInfo | undefined;
   jobs: JobRecord[];
+  pendingCount: number;
   source: "network" | "cache" | undefined;
   loading: boolean;
   error: unknown | undefined;
@@ -17,6 +18,7 @@ interface DayState {
 export const useDayStore = create<DayState>((set) => ({
   day: undefined,
   jobs: [],
+  pendingCount: 0,
   source: undefined,
   loading: false,
   error: undefined,
@@ -27,6 +29,7 @@ export const useDayStore = create<DayState>((set) => ({
       set({
         day: cached.day,
         jobs: cached.jobs,
+        pendingCount: cached.pendingCount,
         source: "cache",
         error: undefined,
       });
@@ -39,6 +42,7 @@ export const useDayStore = create<DayState>((set) => ({
       set({
         day: result.day,
         jobs: result.jobs,
+        pendingCount: result.pendingCount,
         source: result.source,
         loading: false,
         error: undefined,
@@ -55,6 +59,7 @@ export const useDayStore = create<DayState>((set) => ({
       set({
         day: result.day,
         jobs: result.jobs,
+        pendingCount: result.pendingCount,
         source: result.source,
         loading: false,
         error: undefined,
@@ -74,6 +79,7 @@ export const useDayStore = create<DayState>((set) => ({
     set({
       day: cached.day,
       jobs: cached.jobs,
+      pendingCount: cached.pendingCount,
       source: "cache",
       error: undefined,
     });

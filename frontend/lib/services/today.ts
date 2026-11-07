@@ -18,15 +18,16 @@ import { nowLocalIso } from "@/lib/time";
 import { isDemoConflictEnabled } from "@/lib/demo/flags";
 
 /**
- * Day and jobs cached on db.
+ * Day and jobs cached on db, plus how many outbox items are still waiting
  */
 export interface TodaySnapshot {
   day: DayInfo;
   jobs: JobRecord[];
+  pendingCount: number;
 }
 
 /**
- * Where the current snapshot came from.
+ * Where the current snapshot came from
  */
 export type TodaySource = "network" | "cache";
 
@@ -43,10 +44,14 @@ export interface TodayResult extends TodaySnapshot {
  * @returns the data, or null when no day has been stored yet
  */
 export async function readTodayCache(): Promise<TodaySnapshot | null> {
-  const [day, jobs] = await Promise.all([getDayInfo(), listJobs()]);
+  const [day, jobs, queueItems] = await Promise.all([
+    getDayInfo(),
+    listJobs(),
+    listQueueItems(),
+  ]);
   if (!day) return null;
 
-  return { day, jobs };
+  return { day, jobs, pendingCount: queueItems.length };
 }
 
 /**
@@ -151,7 +156,7 @@ export async function refreshToday(): Promise<TodaySnapshot> {
     }
   }
 
-  return { day, jobs };
+  return { day, jobs, pendingCount: queueItems.length };
 }
 
 /**
