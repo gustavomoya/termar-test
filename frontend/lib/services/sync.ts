@@ -48,6 +48,54 @@ export interface SyncJobGroup {
 }
 
 /**
+ * Local storage estimate used by the Sync screen.
+ *
+ * `estimated` is true when the browser does not expose the Storage API and the
+ * UI has to fall back to a fixed 50 MB quota.
+ */
+export interface StorageUsage {
+  usageBytes: number;
+  quotaBytes: number;
+  estimated: boolean;
+}
+
+/**
+ * Fallback quota used when `navigator.storage.estimate()` is not available
+ * (old Android WebViews).
+ */
+export const FALLBACK_STORAGE_QUOTA_BYTES = 50 * 1024 * 1024;
+
+/**
+ * Read how much space the app is using on this tablet.
+ *
+ * The Storage API reports the whole origin, which is exactly what the
+ * technician cares about: photos and worksheets share the same quota.
+ */
+export async function loadStorageUsage(): Promise<StorageUsage> {
+  try {
+    if (typeof navigator !== "undefined" && navigator.storage?.estimate) {
+      const estimate = await navigator.storage.estimate();
+
+      if (typeof estimate.quota === "number" && estimate.quota > 0) {
+        return {
+          usageBytes: estimate.usage ?? 0,
+          quotaBytes: estimate.quota,
+          estimated: false,
+        };
+      }
+    }
+  } catch {
+    // Fall through to the conservative fallback below.
+  }
+
+  return {
+    usageBytes: 0,
+    quotaBytes: FALLBACK_STORAGE_QUOTA_BYTES,
+    estimated: true,
+  };
+}
+
+/**
  * Everything the Sync screen needs to render.
  */
 export interface SyncOverview {
@@ -58,6 +106,7 @@ export interface SyncOverview {
   totalItems: number;
   totalBytes: number;
   waitingBytes: number;
+  storage: StorageUsage;
 }
 
 /**
@@ -163,10 +212,11 @@ function createGroup(
  * @returns the grouped overview for the Sync screen
  */
 export async function loadSyncOverview(): Promise<SyncOverview> {
-  const [queueItems, jobs, worksheets] = await Promise.all([
+  const [queueItems, jobs, worksheets, storage] = await Promise.all([
     safeList(listQueueItems),
     safeList(listJobs),
     safeList(listWorksheets),
+    loadStorageUsage(),
   ]);
 
   const jobsById = new Map(jobs.map((job) => [job.id, job]));
@@ -210,6 +260,7 @@ export async function loadSyncOverview(): Promise<SyncOverview> {
       (total, item) => total + item.sizeBytes,
       0,
     ),
+    storage,
   };
 }
 

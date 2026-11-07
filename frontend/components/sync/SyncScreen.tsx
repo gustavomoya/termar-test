@@ -7,6 +7,7 @@ import {ConnectionControls} from "@/components/shared/ConnectionControls";
 import {useSyncStore} from "@/lib/stores/syncStore";
 import {useEffect} from "react";
 import {ConflictsList} from "@/components/sync/ConflictSection";
+import {StorageBar} from "@/components/sync/StorageBar";
 import {SyncQueueList} from "@/components/sync/SyncQueueList";
 import {primaryButtonClass, secondaryButtonClass} from "@/components/worksheet/styles";
 
@@ -101,6 +102,8 @@ export function SyncScreen() {
                 tablet.
               </div>
           )}
+
+          {overview && <StorageBar storage={overview.storage} />}
 
           <div className="rounded-lg border border-info-border bg-info-soft px-4 py-3 text-sm text-info">
             Nothing here is lost if the tablet is switched off, runs out of
