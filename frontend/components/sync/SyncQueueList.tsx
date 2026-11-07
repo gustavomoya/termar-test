@@ -83,6 +83,7 @@ function SyncQueueRow({ item, onRetry }: { item: QueueRowItem; onRetry: (jobId: 
 
         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-ink-secondary">
           <span>{item.reference}</span>
+          {item.detail && <span>{item.detail}</span>}
           <span>{formatBytes(item.sizeBytes)}</span>
           <span>{attemptsLabel(item.attempts)}</span>
           {item.status === "pending" && item.nextAttemptAt && (
@@ -145,13 +146,12 @@ export function SyncQueueList({
       reference: group.reference,
     })),
   );
-
   if (items.length === 0) return null;
 
   const title = waiting > 0 ? "Waiting to be sent" : "Could not be sent";
   const summary =
     waiting > 0
-      ? `${waiting} ${waiting === 1 ? "item" : "items"} waiting · ${formatBytes(waitingBytes)} on this tablet`
+      ? `${items.length} ${items.length === 1 ? "item" : "items"} waiting · ${formatBytes(waitingBytes)} on this tablet`
       : `${items.length} ${items.length === 1 ? "item" : "items"} still on this tablet`;
 
   return (
@@ -162,13 +162,19 @@ export function SyncQueueList({
       </div>
 
       <ul className="divide-y divide-border">
-        {items.map((item) => (
-          <SyncQueueRow
-            key={`${item.jobId}-${item.step}`}
-            item={item}
-            onRetry={onRetry}
-          />
-        ))}
+        {groups.flatMap((group) =>
+          group.items.map((item) => (
+            <SyncQueueRow
+              key={`${group.jobId}-${item.step}`}
+              item={{
+                ...item,
+                jobId: group.jobId,
+                reference: group.reference,
+              }}
+              onRetry={onRetry}
+            />
+          )),
+        )}
       </ul>
     </section>
   );

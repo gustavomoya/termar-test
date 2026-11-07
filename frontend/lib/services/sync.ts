@@ -3,6 +3,7 @@ import { listJobs, listQueueItems, listWorksheets, type JobRecord, type JobSyncS
 import { formatTime } from "@/lib/today";
 import { readTodayCache } from "@/lib/services/today";
 import { mapDraftToRemoteWorksheet } from "@/lib/services/worksheet";
+import { estimatedDataUrlBytes } from "@/lib/worksheet/photos";
 import { isDemoConflictEnabled } from "@/lib/demo/flags";
 
 /**
@@ -26,6 +27,7 @@ export interface SyncItem {
   step: QueueStep;
   status: QueueItemStatus;
   label: string;
+  detail?: string;
   sizeBytes: number;
   attempts: number;
   nextAttemptAt?: string;
@@ -68,21 +70,46 @@ function answeredCount(worksheet: WorksheetDraft): number {
 }
 
 /**
+ * Describe what is inside the worksheet upload
+ */
+function describeDetail(worksheet: WorksheetDraft): string | undefined {
+  const parts = worksheet.parts.length;
+  const photos = worksheet.photos.length;
+  const pieces = [
+    parts > 0 ? `${parts} ${parts === 1 ? "part" : "parts"}` : null,
+    photos > 0 ? `${photos} ${photos === 1 ? "photo" : "photos"}` : null,
+    worksheet.signature ? "signed" : null,
+  ].filter((piece): piece is string => piece !== null);
+
+  return pieces.length > 0 ? pieces.join(" · ") : undefined;
+}
+
+/**
  * Estimate the bytes a queued step will send.
  *
- * The worksheet upload is the real payload (signature included); the status
- * step only sends a small JSON body.
+ * The worksheet upload is the real payload: the mapped worksheet already
+ * includes the signature, and the compressed photos travel as base64 inside it.
+ * The status step only sends a small JSON body
  */
 function estimateSize(
   item: QueueItem,
   worksheet: WorksheetDraft | undefined,
 ): number {
-  const payload =
-    item.step === "worksheet" && worksheet
-      ? mapDraftToRemoteWorksheet(worksheet)
-      : { status: "synced" };
+  if (item.step !== "worksheet" || !worksheet) {
+    return new TextEncoder().encode(JSON.stringify({ status: "synced" }))
+      .length;
+  }
 
-  return new TextEncoder().encode(JSON.stringify(payload)).length;
+  const payloadBytes = new TextEncoder().encode(
+    JSON.stringify(mapDraftToRemoteWorksheet(worksheet)),
+  ).length;
+  const photoBytes = worksheet.photos.reduce(
+    (total, photo) =>
+      total + (photo.sizeBytes ? estimatedDataUrlBytes(photo.sizeBytes) : 0),
+    0,
+  );
+
+  return payloadBytes + photoBytes;
 }
 
 /**
@@ -103,6 +130,7 @@ function describeItem(
     step: item.step,
     status: item.status,
     label,
+    detail: isWorksheet && worksheet ? describeDetail(worksheet) : undefined,
     sizeBytes: estimateSize(item, worksheet),
     attempts: item.attempts,
     nextAttemptAt: item.nextAttemptAt,
@@ -165,6 +193,7 @@ export async function loadSyncOverview(): Promise<SyncOverview> {
   const groups = [...groupsById.values()].sort((a, b) =>
     a.scheduledAt.localeCompare(b.scheduledAt),
   );
+
   const items = groups.flatMap((group) => group.items);
   const waitingItems = items.filter(
     (item) => item.status === "pending" || item.status === "sending",
