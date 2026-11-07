@@ -32,7 +32,9 @@ export function WorksheetScreen({ jobId }: WorksheetScreenProps) {
   const readOnly = useWorksheetStore((state) => state.readOnly);
   const loading = useWorksheetStore((state) => state.loading);
   const error = useWorksheetStore((state) => state.error);
-  const saveError = useWorksheetStore((state) => state.saveError);
+  const saveErrorMessage = useWorksheetStore(
+    (state) => state.saveErrorMessage,
+  );
   const finishErrors = useWorksheetStore((state) => state.finishErrors);
   const lastSavedAt = useWorksheetStore((state) => state.lastSavedAt);
   const hydrate = useWorksheetStore((state) => state.hydrate);
@@ -114,12 +116,12 @@ export function WorksheetScreen({ jobId }: WorksheetScreenProps) {
       />
 
       <main key={draft.jobId} className="flex-1 space-y-4 p-4 pb-28">
-        {saveError ? (
+        {saveErrorMessage ? (
           <div
             role="alert"
             className="rounded-lg border border-danger-border bg-danger-soft p-4 text-sm font-medium text-danger"
           >
-            Could not save on this tablet. Keep this screen open and try again.
+            {saveErrorMessage}
           </div>
         ) : null}
 
