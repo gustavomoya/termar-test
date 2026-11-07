@@ -11,8 +11,10 @@ import {
   deleteWorksheet,
   getJob,
   getWorksheet,
+  isQuotaExceededError,
   patchJob,
   putArchivedWorksheet,
+  QUOTA_EXCEEDED_MESSAGE,
   type ArchivedWorksheet,
   type ConflictResolution,
   type JobRecord,
@@ -250,7 +252,9 @@ export const useSyncStore = create<SyncState>((set, get) => {
         // conflict untouched so the technician can try again.
         set({
           sending: false,
-          sendError: errorMessage(error, "Could not resolve the conflict."),
+          sendError: isQuotaExceededError(error)
+            ? QUOTA_EXCEEDED_MESSAGE
+            : errorMessage(error, "Could not resolve the conflict."),
         });
       }
     },

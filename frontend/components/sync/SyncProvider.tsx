@@ -40,7 +40,11 @@ export function SyncProvider() {
 
       try {
         const result = await flushQueue();
-        if (result.synced > 0 || result.failed > 0) {
+        if (
+          result.synced > 0 ||
+          result.failed > 0 ||
+          result.conflicts > 0
+        ) {
           await useDayStore.getState().reloadFromCache();
         }
       } catch {

@@ -1,3 +1,5 @@
+import type { ConflictWith } from "@/lib/db";
+
 /**
  * Error for sync items that should not be retried (for example, a missing
  * local worksheet or an invalid payload).
@@ -6,6 +8,24 @@ export class RejectedError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "RejectedError";
+  }
+}
+
+/**
+ * The office already has another technician's worksheet for this job. The
+ * upload must stop and the technician has to choose what to do.
+ */
+export class ConflictError extends Error {
+  readonly status = 409;
+  readonly conflictWith: ConflictWith;
+
+  constructor(
+    message: string,
+    conflictWith: ConflictWith,
+  ) {
+    super(message);
+    this.name = "ConflictError";
+    this.conflictWith = conflictWith;
   }
 }
 

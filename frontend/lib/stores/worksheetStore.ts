@@ -8,7 +8,13 @@ import type {
   StoredTemplate,
   WorksheetDraft,
 } from "@/lib/db";
-import { deletePhoto, getJob, putPhoto } from "@/lib/db";
+import {
+  deletePhoto,
+  getJob,
+  isQuotaExceededError,
+  putPhoto,
+  QUOTA_EXCEEDED_MESSAGE,
+} from "@/lib/db";
 import { loadWorksheet, saveWorksheetDraft } from "@/lib/services/worksheet";
 import { flushQueue } from "@/lib/sync/engine";
 import { enqueueWorksheet } from "@/lib/sync/outbox";
@@ -44,6 +50,7 @@ interface WorksheetState {
   saving: boolean;
   error?: unknown;
   saveError?: unknown;
+  saveErrorMessage?: string;
   finishErrors: string[];
   lastSavedAt?: string;
 
@@ -90,11 +97,18 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
       set({
         saving: false,
         saveError: undefined,
+        saveErrorMessage: undefined,
         lastSavedAt: saved.updatedAt,
       });
       return true;
     } catch (error) {
-      set({ saving: false, saveError: error });
+      set({
+        saving: false,
+        saveError: error,
+        saveErrorMessage: isQuotaExceededError(error)
+          ? QUOTA_EXCEEDED_MESSAGE
+          : "Could not save on this tablet. Keep this screen open and try again.",
+      });
       return false;
     }
   };
@@ -163,6 +177,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
         saving: false,
         error: undefined,
         saveError: undefined,
+        saveErrorMessage: undefined,
         finishErrors: [],
         lastSavedAt: undefined,
       });
@@ -484,8 +499,9 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
         }));
       } catch (error) {
         set({
-          photoError:
-            error instanceof Error
+          photoError: isQuotaExceededError(error)
+            ? QUOTA_EXCEEDED_MESSAGE
+            : error instanceof Error
               ? error.message
               : "Could not save the photo on this tablet.",
         });
@@ -564,7 +580,11 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
 
       const saved = await persist();
       if (!saved) {
-        const errors = ["Could not save the worksheet."];
+        const errors = [
+          isQuotaExceededError(get().saveError)
+            ? QUOTA_EXCEEDED_MESSAGE
+            : "Could not save the worksheet.",
+        ];
         set({ finishErrors: errors });
         return { ok: false, errors };
       }

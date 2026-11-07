@@ -1,7 +1,7 @@
 import { ApiError, NetworkError } from "@/lib/api/client";
 import { setJobStatus, uploadWorksheet } from "@/lib/api/worksheet";
 import { getQueueItem, getWorksheet, listQueueItems } from "@/lib/db";
-import type { QueueItem } from "@/lib/db";
+import type { ConflictWith, QueueItem } from "@/lib/db";
 import {
   markWorksheetPhotosUploaded,
   prepareWorksheetUpload,
@@ -9,12 +9,14 @@ import {
 import { MAX_TOTAL_PHOTO_UPLOAD_BYTES } from "@/lib/worksheet/photos";
 import {
   advanceToStatus,
+  markQueueConflict,
   markQueueFailed,
   markQueueSending,
   markQueueSent,
   scheduleQueueRetry,
 } from "@/lib/sync/outbox";
-import { JobGoneError, RejectedError } from "@/lib/sync/errors";
+import { ConflictError, JobGoneError, RejectedError } from "@/lib/sync/errors";
+import { nowLocalIso } from "@/lib/time";
 
 const MAX_SYNC_ATTEMPTS = 7;
 const BASE_RETRY_DELAY_MS = 1000;
@@ -28,9 +30,10 @@ export interface SyncRunResult {
   synced: number;
   failed: number;
   retrying: number;
+  conflicts: number;
 }
 
-type JobOutcome = "synced" | "failed" | "retrying" | "offline" | "skipped";
+type JobOutcome = "synced" | "failed" | "retrying" | "offline" | "conflict" | "skipped";
 
 let activeRun: Promise<SyncRunResult> | undefined;
 
@@ -88,8 +91,42 @@ function isRejected(error: unknown): boolean {
     error.status >= 400 &&
     error.status < 500 &&
     error.status !== 408 &&
-    error.status !== 429
+    error.status !== 429 &&
+    error.status !== 409
   );
+}
+
+/**
+ * Read data from a 409 response body
+ *
+ * @param error the API error with status 409
+ *
+ * @returns the conflict metadata, or undefined when the body is not usable
+ */
+function conflictWithFrom(error: ApiError): ConflictWith | undefined {
+  if (!error.body || typeof error.body !== "object") return undefined;
+
+  const body = error.body as {
+    conflictWith?: unknown;
+    technician?: unknown;
+    completedAt?: unknown;
+  };
+  const candidate =
+    body.conflictWith && typeof body.conflictWith === "object"
+      ? (body.conflictWith as Record<string, unknown>)
+      : (body as Record<string, unknown>);
+
+  if (
+    typeof candidate.technician === "string" &&
+    typeof candidate.completedAt === "string"
+  ) {
+    return {
+      technician: candidate.technician,
+      completedAt: candidate.completedAt,
+    };
+  }
+
+  return undefined;
 }
 
 /**
@@ -149,6 +186,18 @@ async function processJob(jobId: string): Promise<JobOutcome> {
 
       return "synced";
     } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        const conflictWith =
+          conflictWithFrom(error) ??
+          claimed.conflictWith ?? {
+            technician: "Another technician",
+            completedAt: nowLocalIso(),
+          };
+        const conflict = new ConflictError(error.message, conflictWith);
+        await markQueueConflict(jobId, conflict.conflictWith);
+        return "conflict";
+      }
+
       const syncError =
         error instanceof ApiError && error.status === 404
           ? new JobGoneError()
@@ -200,6 +249,7 @@ async function runQueue(force: boolean): Promise<SyncRunResult> {
     synced: 0,
     failed: 0,
     retrying: 0,
+    conflicts: 0,
   };
 
   for (const jobId of jobIds) {
@@ -209,6 +259,7 @@ async function runQueue(force: boolean): Promise<SyncRunResult> {
     if (outcome === "synced") result.synced += 1;
     if (outcome === "failed") result.failed += 1;
     if (outcome === "retrying") result.retrying += 1;
+    if (outcome === "conflict") result.conflicts += 1;
 
     if (outcome === "offline") {
       result.retrying += 1;
