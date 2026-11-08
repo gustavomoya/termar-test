@@ -47,19 +47,35 @@ export function WorksheetScreen({ jobId }: WorksheetScreenProps) {
     void hydrate(jobId);
   }, [jobId, hydrate]);
 
+  // Prevent leaving the worksheet page while there is a not-yet-persisted change
+  // or an explicit unload, so work is never lost between jobs
   useEffect(() => {
-    const flush = () => {
-      void useWorksheetStore.getState().flush();
+    const flush = () => void useWorksheetStore.getState().flush();
+    const handler = (event: BeforeUnloadEvent) => {
+      const store = useWorksheetStore.getState();
+      if (!store.draft || store.readOnly) return;
+
+      // save what is pending before the browser leaves.
+      flush();
+
+      if (store.hasUnsavedChanges() || store.saveError !== undefined) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
     };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
+
+  useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === "hidden") flush();
+      if (document.visibilityState === "hidden") {
+        void useWorksheetStore.getState().flush();
+      }
     };
 
-    window.addEventListener("beforeunload", flush);
     document.addEventListener("visibilitychange", handleVisibility);
-
     return () => {
-      window.removeEventListener("beforeunload", flush);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);

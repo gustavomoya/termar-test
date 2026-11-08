@@ -71,6 +71,7 @@ interface WorksheetState {
   clearSignature: () => void;
   finish: () => Promise<{ ok: boolean; errors: string[] }>;
   flush: () => Promise<boolean>;
+  hasUnsavedChanges: () => boolean;
 }
 
 export const useWorksheetStore = create<WorksheetState>((set, get) => {
@@ -631,5 +632,12 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => {
       }
       return persist();
     },
+
+    /**
+     * Whether there is work that has not reached IndexedDB yet.
+     *
+     * @returns true when the draft changed since the last successful save
+     */
+    hasUnsavedChanges: () => dirty || get().saving,
   };
 });
