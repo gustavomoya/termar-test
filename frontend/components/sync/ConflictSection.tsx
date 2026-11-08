@@ -48,15 +48,16 @@ export function ConflictSection({
           send both and let the office decide.
         </p>
         <p className="text-xs text-ink-muted">
-          For {other.technician}&apos;s worksheet only the data available to this
-          tablet is shown; everything else is “—”.
+          The other worksheet was not downloaded to this tablet. For{" "}
+          {other.technician}&apos;s worksheet only the data available here is
+          shown; everything else is “—”.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
         <div className="border border-border rounded-lg p-4">
           <h3 className="text-md font-semibold mb-2">Yours</h3>
-          <div className="text-sm text-secondary mb-3">
+          <div className="text-sm text-ink-secondary mb-3">
             {mine.technician} · {mine.van}
           </div>
           <dl className="divide-y divide-border text-sm">
@@ -99,7 +100,7 @@ export function ConflictSection({
 
         <div className="border border-border rounded-lg p-4">
           <h3 className="text-md font-semibold mb-2">{other.technician}</h3>
-          <div className="text-sm text-secondary mb-3">
+          <div className="text-sm text-ink-secondary mb-3">
             The office&apos;s copy
           </div>
           <dl className="divide-y divide-border text-sm">

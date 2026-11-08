@@ -44,6 +44,7 @@ export function JobCard({ job }: JobCardProps) {
     <Link
       href={`/jobs/${job.id}`}
       style={{ borderLeftColor: style.border }}
+      aria-label={`${job.reference} · ${job.task} worksheet at ${job.site.name}`}
       className="block bg-surface border border-border border-l-4 rounded-lg shadow-sm p-4 mb-3 min-h-[96px] text-ink hover:border-primary-border hover:no-underline transition-colors"
     >
       <div className="flex items-center justify-between gap-3">

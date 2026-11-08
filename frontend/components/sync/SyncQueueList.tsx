@@ -151,7 +151,7 @@ export function SyncQueueList({
   const title = waiting > 0 ? "Waiting to be sent" : "Could not be sent";
   const summary =
     waiting > 0
-      ? `${items.length} ${items.length === 1 ? "item" : "items"} waiting · ${formatBytes(waitingBytes)} on this tablet`
+      ? `${waiting} ${waiting === 1 ? "item" : "items"} waiting · ${formatBytes(waitingBytes)} on this tablet`
       : `${items.length} ${items.length === 1 ? "item" : "items"} still on this tablet`;
 
   return (

@@ -53,9 +53,9 @@ export function SyncScreen() {
                 <div className="truncate text-sm text-ink-secondary">
                   Your work
                 </div>
-                <div className="truncate text-lg font-semibold">
+                <h1 className="truncate text-lg font-semibold">
                   What has been sent
-                </div>
+                </h1>
               </div>
             </div>
             <ConnectionControls online={online}/>

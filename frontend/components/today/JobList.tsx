@@ -28,6 +28,8 @@ export function JobList({ jobs }: JobListProps) {
         {rows.map((row) => (
           <div
             key={row.label}
+            role="group"
+            aria-label={`Stat: ${row.label}`}
             className="px-4 py-3 bg-surface border border-border rounded-lg shadow-sm flex flex-col gap-2"
           >
             <span className="text-sm text-ink-secondary font-medium">

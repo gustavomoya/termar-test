@@ -15,9 +15,9 @@ export function FieldHeader({ day, online, pendingCount }: FieldHeaderProps) {
       <div className="flex min-h-[60px] items-center justify-between gap-3 px-4 py-3">
         <div>
           <div className="text-sm text-ink-secondary">{formatDay(day.day)}</div>
-          <div className="text-lg font-semibold">
+          <h1 className="text-lg font-semibold">
             {day.technician.name} · {day.technician.van}
-          </div>
+          </h1>
         </div>
         <ConnectionControls online={online} />
       </div>

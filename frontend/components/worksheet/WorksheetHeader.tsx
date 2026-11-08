@@ -1,6 +1,11 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
 import type { JobRecord } from "@/lib/db";
 import { formatTime, plantLabel } from "@/lib/today";
+import { useWorksheetStore } from "@/lib/stores/worksheetStore";
 import { ConnectionControls } from "@/components/shared/ConnectionControls";
 
 interface WorksheetHeaderProps {
@@ -16,24 +21,37 @@ export function WorksheetHeader({
   savedAt,
   readOnly,
 }: WorksheetHeaderProps) {
+  const router = useRouter();
+  const flush = useWorksheetStore((state) => state.flush);
+  const [busy, setBusy] = useState(false);
+
+  const handleBack = async () => {
+    setBusy(true);
+    const saved = await flush();
+    setBusy(false);
+    if (saved) router.push("/");
+  };
+
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-surface">
       <div className="flex min-h-[60px] items-center justify-between gap-3 px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
-          <Link
-            href="/"
+          <button
+            type="button"
+            onClick={handleBack}
+            disabled={busy}
             aria-label="Back to today's jobs"
-            className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-lg text-xl text-ink-secondary hover:bg-surface-sunken"
+            className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-lg text-xl text-ink-secondary hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50"
           >
             ←
-          </Link>
+          </button>
           <div className="min-w-0">
             <div className="truncate text-sm text-ink-secondary">
               {job.reference} · {plantLabel(job.plantType)}
             </div>
-            <div className="truncate text-lg font-semibold">
+            <h1 className="truncate text-lg font-semibold">
               {job.site.name}
-            </div>
+            </h1>
           </div>
         </div>
         <ConnectionControls online={online} />
