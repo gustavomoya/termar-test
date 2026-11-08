@@ -1,36 +1,202 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Termar Servicios
 
-## Getting Started
+Offline-first web application for a Termar Servicios technician to complete
+worksheets on an Android tablet. Work is saved on the device first (IndexedDB)
+and sent to the office when there is a connection, without losing data if the
+signal drops.
 
-First, run the development server:
+- **Stack:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4,
+  Zustand and `idb`.
+- **Supporting backend:** `../backend-03-termar` (Node.js with no dependencies).
+- **Requirements and decisions documentation:** `../REQUIREMENTS.md`,
+  `../ASSUMPTIONS.md`.
+
+---
+
+## Requirements
+
+- **Node.js 20.9 or newer** (Next.js 16 requirement) and `npm`.
+- An up-to-date Chromium browser (Chrome/Edge) on the tablet or in the browser's
+  device emulator.
+- Port **3000** free for the frontend and **4000** for the backend (or set
+  different ones with `PORT` / `NEXT_PUBLIC_API_BASE`).
+
+---
+
+## Getting started
+
+### 1. Start the backend
+
+In one terminal:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd backend-03-termar
+node server.js
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The server runs at `http://localhost:4000` and loads the initial state from
+`seed.json`. Data lives **in memory**: restarting the process returns to the
+sample state.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Configure and start the frontend
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+In another terminal:
 
-## Learn More
+```bash
+cd frontend
+cp .env.local.example .env.local   # adjust the values if needed
+npm install
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open `http://localhost:3000`. For the demo, use the browser's responsive mode
+at a tablet width (for example, 900–1100 px).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> `NEXT_PUBLIC_*` variables are inlined at startup. If you change `.env.local`,
+> restart `npm run dev`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. Production build (optional)
 
-## Deploy on Vercel
+```bash
+npm run build
+npm start
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Environment variables
+
+Copy `.env.local.example` to `.env.local`. The `.env.local` file is ignored by
+Git; the example file is versioned.
+
+| Variable | Required | Default | Description |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_API_BASE` | No | `http://localhost:4000` | Backend base URL. No trailing slash. |
+| `NEXT_PUBLIC_DEMO_CONFLICT` | No | `false` | `true` seeds a local worksheet for `job-88223` to demonstrate conflict resolution. It only writes to IndexedDB. |
+| `NEXT_PUBLIC_DEMO_NETWORK` | No | `false` | `true` shows the **Simulate no signal** switch in the headers. It simulates loss of signal without changing the real network. |
+
+In a real deployment, leave both `NEXT_PUBLIC_DEMO_*` variables unset or set to
+`false`.
+
+---
+
+## Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Development server at `http://localhost:3000`. |
+| `npm run build` | Builds the application for production. |
+| `npm start` | Serves the production build. |
+| `npm run lint` | Runs ESLint. |
+| `npx tsc --noEmit` | Type check without emitting files. |
+
+---
+
+## Backend connection
+
+The HTTP client (`lib/api/client.ts`) uses `NEXT_PUBLIC_API_BASE` and applies an
+8 s timeout. It distinguishes between:
+
+- `NetworkError`: no connection, unreachable server or timeout.
+- `ApiError`: HTTP 4xx/5xx response.
+
+Endpoints consumed:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/day` | Day data (technician, date, depot). |
+| `GET` | `/api/jobs` | List of the day's jobs. |
+| `GET` | `/api/jobs/:id` | Job details. |
+| `GET` | `/api/jobs/:id/worksheet` | Worksheet stored on the server. |
+| `POST` | `/api/jobs/:id/worksheet` | Send the completed worksheet. |
+| `POST` | `/api/jobs/:id/status` | Update the job status. |
+| `GET` | `/api/checklist-templates` | Checklist templates. |
+| `GET` | `/api/checklist-templates/:plantType` | Template by plant type. |
+| `GET` | `/api/van-stock` | Van stock. |
+| `POST` | `/api/sync-queue` | Sync registration. |
+
+The backend handles `OPTIONS` requests and allows access from the development
+frontend.
+
+---
+
+## Local storage
+
+Business data lives in IndexedDB (database `termar-field`, via `idb`). The UI
+never accesses IndexedDB or `fetch` directly: it goes through `lib/stores` →
+`lib/services` → `lib/api` / `lib/db`.
+
+- Work is saved locally before attempting to send it.
+- The outbox retries with increasing backoff.
+- `localStorage` is only used for the simulated-signal flag
+  (`termar:simulated-offline`).
+
+To reset the demo from scratch: restart the backend and delete the
+`termar-field` database from DevTools → Application → IndexedDB.
+
+---
+
+## Demo: offline flow
+
+1. With the backend running, open `http://localhost:3000` and wait for the day
+   to load. The data is now cached on the tablet.
+2. Open a job, start the timer, complete checks, parts, a photo and the
+   signature. Everything autosaves.
+3. Turn on **Simulate no signal** in the header (requires
+   `NEXT_PUBLIC_DEMO_NETWORK=true`). The indicator switches to offline.
+4. Press **Finish job**. The worksheet stays pending on the tablet and the
+   pending counter on the **Today** screen increases.
+5. Open **Sync**: you will see the waiting items, their size and attempts.
+   **Try sending now** is disabled without signal.
+6. Turn off **Simulate no signal**. The queue is sent automatically and the
+   items move to **At the office**.
+7. Reload with signal to confirm the state persists.
+
+---
+
+## Demo: conflict between technicians
+
+With `NEXT_PUBLIC_DEMO_CONFLICT=true`, loading the day creates a local worksheet
+for `job-88223`, which the backend already marks as `conflict`.
+
+1. Open **Sync**. **One job was done twice** appears with both versions.
+2. Compare your worksheet with the other technician's (time, checks, failures,
+   parts, photos and signature).
+3. Choose an option:
+   - **Keep mine**: your worksheet is kept and sent.
+   - **Keep Berta's**: the other technician's worksheet is kept.
+   - **Send both**: your worksheet is sent and the available metadata from the
+     other one is kept; the office receives a note about the resolution. The
+     backend only accepts one worksheet per job, so it does not claim both
+     arrive.
+4. The discarded worksheet is archived in the local `archive` store. There is no
+   screen to recover it yet.
+
+---
+
+## Accessibility and tablet use
+
+- Touch targets of at least 48 px and a fixed bottom action bar.
+- Status is never conveyed by color alone: there is always text or an icon.
+- Visible focus, heading hierarchy and ARIA labels.
+- Respects the device's text scaling and `prefers-reduced-motion`.
+- Browser warning and save when leaving a worksheet with changes.
+
+---
+
+## Project structure
+
+```text
+frontend/
+├─ app/                 # Routes: Today (/), worksheet (/jobs/[id]), Sync (/sync)
+├─ components/          # UI by screen (today, worksheet, sync, shared)
+├─ lib/
+│  ├─ api/              # HTTP client and endpoints
+│  ├─ db/               # IndexedDB, schema and migrations
+│  ├─ services/         # Business rules and orchestration
+│  ├─ stores/           # UI state (Zustand)
+│  ├─ sync/             # Outbox and retries
+│  ├─ demo/             # Demo-only data and flags
+│  └─ network/          # Connection state and simulation
+└─ .env.local.example   # Example environment variables
+```
