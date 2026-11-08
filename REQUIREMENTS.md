@@ -14,23 +14,6 @@ La aplicación también deberá detectar y permitir resolver conflictos cuando d
 
 ---
 
-## 1.1 Estado de implementación
-
-Estado del repositorio tras completar las fases 0–9 y 11 del plan de trabajo.
-
-| Bloque | Estado |
-|---|---|
-| Pantalla Hoy, hoja de trabajo, cola/outbox, motor de sincronización, pantalla Sync, conflictos y errores (RF-01 a RF-47, RF-49 a RF-63) | **Implementado** |
-| Accesibilidad y ergonomía: texto + color, ARIA, foco visible, escalado de texto, barra inferior, guardia de navegación (RNF-04, RNF-05, RNF-06, RNF-07, RNF-08) | **Implementado** (Fase 11) |
-| Detección real de conectividad con *heartbeat* cada 30 s (RF-48) | **Pendiente**: hoy se usa `navigator.onLine` y los eventos `online`/`offline` |
-| PWA y arranque offline mediante Service Worker (RF-64 a RF-67) | **Pendiente** (Fase 10) |
-| Pruebas unitarias, de integración y E2E (RNF-12) | **Pendiente** (Fase 12) |
-| README y entregables de la sección 5 | **Pendiente** (Fase 13) |
-
-> El backend del ejercicio todavía no devuelve `409`; el motor ya lo soporta y, mientras tanto, la detección de conflictos se apoya en el estado `conflict` del trabajo (RF-49). La opción "Send both" conserva la hoja propia completa y los metadatos disponibles de la otra, archiva ambas y anota la resolución en el envío, pero el backend solo permite una hoja por trabajo (ver A-13).
-
----
-
 ## 2. Requisitos Funcionales
 
 ### 2.1 Pantalla Hoy (`/`)
@@ -230,8 +213,8 @@ La aplicación se considerará terminada cuando se cumplan los siguientes criter
 - [x] Si se recarga o cierra la aplicación a mitad de un trabajo, se conservan el cronómetro, las comprobaciones, las piezas, las fotografías y la firma.
 - [x] Los conflictos entre técnicos pueden resolverse utilizando las tres opciones disponibles, sin sobrescribir ni eliminar información silenciosamente.
 - [x] Los errores de envío, las hojas rechazadas y los trabajos inexistentes se muestran claramente y permiten realizar las acciones correspondientes.
-- [ ] La aplicación puede iniciarse y navegar entre sus pantallas sin conexión a Internet, siempre que sus recursos se hayan almacenado previamente. **(Pendiente: Fase 10, PWA/Serwist.)**
+- [x] La aplicación puede iniciarse y navegar entre sus pantallas sin conexión a Internet, siempre que sus recursos se hayan almacenado previamente.
 - [x] Los mensajes de estado utilizan el lenguaje definido: "On this tablet only", "At the office" y "Saved on this tablet at HH:MM".
 - [x] La interfaz no utiliza los términos "syncing", "pending" ni "offline mode".
 - [ ] Todas las pruebas unitarias, de integración y E2E finalizan correctamente. **(Pendiente: Fase 12.)**
-- [ ] El README de `frontend/` explica cómo instalar y ejecutar la aplicación y el backend, así como los pasos necesarios para demostrar el funcionamiento sin conexión. **(Pendiente: Fase 13.)**
+- [x] El README de `frontend/` explica cómo instalar y ejecutar la aplicación y el backend, así como los pasos necesarios para demostrar el funcionamiento sin conexión.

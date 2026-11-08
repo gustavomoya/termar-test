@@ -6,7 +6,7 @@ and sent to the office when there is a connection, without losing data if the
 signal drops.
 
 - **Stack:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4,
-  Zustand and `idb`.
+  Zustand, `idb` and Serwist (`@serwist/turbopack`).
 - **Supporting backend:** `../backend-03-termar` (Node.js with no dependencies).
 - **Requirements and decisions documentation:** `../REQUIREMENTS.md`,
   `../ASSUMPTIONS.md`.
@@ -136,7 +136,44 @@ To reset the demo from scratch: restart the backend and delete the
 
 ---
 
+## Progressive Web App (PWA)
+
+The app ships a service worker built with Serwist (`@serwist/turbopack`) and a
+web app manifest, so it can be installed and opened offline after the first
+online load.
+
+- **Manifest:** `app/manifest.ts` is served at `/manifest.webmanifest` with the
+  app name, theme colors and 192/512/maskable icons.
+- **Service worker:** `app/sw.ts` precaches the app shell (`/`, `/sync`) and the
+  static assets. Routes visited online are cached at runtime; routes that were
+  never visited fall back to `/~offline`.
+- **Registration:** `SerwistProvider` in `app/layout.tsx` registers
+  `/serwist/sw.js`, served by the route handler in `app/serwist/[path]`.
+- **Development:** the dev server uses a network-only service worker, so there
+  is no caching during `npm run dev`. To test installation and offline startup,
+  use a production build:
+
+```bash
+npm run build
+npm start
+```
+
+Open `http://localhost:3000` once with the backend running so the day data and
+the app shell are cached. After that you can stop the backend, reload the page
+and navigate between **Today** and **Sync** without a connection.
+
+> Browsers require HTTPS or `localhost` to register a service worker. On a
+> tablet, serve the build over HTTPS or expose `localhost` through port
+> forwarding.
+
+---
+
 ## Demo: offline flow
+
+> The in-session flow works with `npm run dev` and the **Simulate no signal**
+> switch. To demonstrate a real reload/startup without network, use the
+> production build described in
+> [Progressive Web App](#progressive-web-app-pwa).
 
 1. With the backend running, open `http://localhost:3000` and wait for the day
    to load. The data is now cached on the tablet.
@@ -151,6 +188,9 @@ To reset the demo from scratch: restart the backend and delete the
 6. Turn off **Simulate no signal**. The queue is sent automatically and the
    items move to **At the office**.
 7. Reload with signal to confirm the state persists.
+8. With the production build, stop the backend and reload again: the app shell
+   still opens, **Today** and **Sync** remain reachable, and unvisited routes
+   show the `/~offline` fallback.
 
 ---
 
@@ -188,15 +228,20 @@ for `job-88223`, which the backend already marks as `conflict`.
 
 ```text
 frontend/
-├─ app/                 # Routes: Today (/), worksheet (/jobs/[id]), Sync (/sync)
-├─ components/          # UI by screen (today, worksheet, sync, shared)
+├─ app/
+│  ├─ manifest.ts        # Web app manifest (/manifest.webmanifest)
+│  ├─ sw.ts              # Serwist service worker
+│  ├─ serwist/[path]/    # Service worker route handler
+│  └─ ~offline/          # Offline fallback page
+├─ components/           # UI by screen (today, worksheet, sync, shared)
 ├─ lib/
-│  ├─ api/              # HTTP client and endpoints
-│  ├─ db/               # IndexedDB, schema and migrations
-│  ├─ services/         # Business rules and orchestration
-│  ├─ stores/           # UI state (Zustand)
-│  ├─ sync/             # Outbox and retries
-│  ├─ demo/             # Demo-only data and flags
-│  └─ network/          # Connection state and simulation
-└─ .env.local.example   # Example environment variables
+│  ├─ api/               # HTTP client and endpoints
+│  ├─ db/                # IndexedDB, schema and migrations
+│  ├─ services/          # Business rules and orchestration
+│  ├─ stores/            # UI state (Zustand)
+│  ├─ sync/              # Outbox and retries
+│  ├─ demo/              # Demo-only data and flags
+│  └─ network/           # Connection state and simulation
+├─ public/icons/         # PWA icons (192, 512, maskable, apple-touch)
+└─ .env.local.example    # Example environment variables
 ```
