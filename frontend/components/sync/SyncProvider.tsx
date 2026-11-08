@@ -9,6 +9,9 @@ import {
   readStoredSimulatedOffline,
   SIMULATED_OFFLINE_STORAGE_KEY,
 } from "@/lib/network/simulation";
+import { probeBackend } from "@/lib/network/probe";
+
+const HEARTBEAT_INTERVAL_MS = 30_000;
 
 /**
  * Runs the sync engine when the app starts, when the network comes back and
@@ -58,14 +61,39 @@ export function SyncProvider() {
       }
     }
 
+    let probing = false;
+
+    async function probeAndApply() {
+      if (probing) return;
+      probing = true;
+
+      try {
+        const reachable = await probeBackend();
+        if (disposed) return;
+        useNetworkStore.getState().setReachable(reachable);
+      } finally {
+        probing = false;
+      }
+    }
+
     const handleOnline = () => {
       useNetworkStore.getState().setOnline(true);
-      void run();
+      void probeAndApply();
     };
 
     const handleOffline = () => {
       useNetworkStore.getState().setOnline(false);
-      clearTimer();
+    };
+
+    const handleWake = () => {
+      if (navigator.onLine) {
+        useNetworkStore.getState().setOnline(true);
+      }
+      void probeAndApply();
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") handleWake();
     };
 
     const handleQueueChange = () => {
@@ -88,12 +116,22 @@ export function SyncProvider() {
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+    window.addEventListener("focus", handleWake);
+    window.addEventListener("pageshow", handleWake);
+    document.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("storage", handleStorage);
     const unsubscribe = subscribeQueueChanges(handleQueueChange);
     const unsubscribeNetwork = useNetworkStore.subscribe((state, previous) => {
-      if (state.simulatedOffline === previous.simulatedOffline) return;
+      if (
+        state.simulatedOffline !== previous.simulatedOffline &&
+        !state.simulatedOffline
+      ) {
+        void probeAndApply();
+      }
 
-      if (state.simulatedOffline) {
+      if (state.online === previous.online) return;
+
+      if (!state.online) {
         clearTimer();
         return;
       }
@@ -101,15 +139,26 @@ export function SyncProvider() {
       void run();
     });
 
+    const heartbeat = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void probeAndApply();
+      }
+    }, HEARTBEAT_INTERVAL_MS);
+
+    void probeAndApply();
     void run();
 
     return () => {
       disposed = true;
       clearTimer();
+      clearInterval(heartbeat);
       unsubscribe();
       unsubscribeNetwork();
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("focus", handleWake);
+      window.removeEventListener("pageshow", handleWake);
+      document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("storage", handleStorage);
     };
   }, []);

@@ -79,7 +79,7 @@ Incluye únicamente supuestos relacionados con el funcionamiento y la experienci
 | **A-31** | Si una operación de envío falla, la aplicación informará al técnico y le permitirá intentar enviarla de nuevo. | El brief no define cómo deben mostrarse los errores de sincronización ni qué acciones debe poder realizar el técnico. |
 | **A-32** | Si el servidor rechaza una hoja de trabajo por un problema de validación o de datos, se mostrará el motivo del rechazo y se permitirá corregir la información y volver a enviarla. | El brief no contempla explícitamente los rechazos del servidor ni el proceso para corregirlos. |
 | **A-33** | Si un trabajo ya no existe en la oficina, se informará al técnico y se conservarán los datos que tenga guardados en la tablet. No se eliminará la información local automáticamente. | El brief no describe qué debe ocurrir si un trabajo se elimina o se reprograma mientras el técnico todavía tiene información local sin enviar. |
-| **A-34** | La aplicación podrá abrirse y utilizarse sin conexión, incluso después de cerrarla y volver a iniciarla, siempre que sus recursos y datos necesarios se hayan descargado y guardado previamente en la tablet. La primera carga de la aplicación requerirá conexión. En esta entrega el trabajo sin conexión funciona con la aplicación ya cargada; el arranque offline completo queda pendiente de la Fase 10 (PWA/Service Worker). | El brief pide que los técnicos puedan trabajar sin preocuparse por la conectividad, pero no especifica cómo debe funcionar el primer acceso ni qué recursos deben estar disponibles para iniciar la aplicación sin señal. |
+| **A-34** | La aplicación podrá abrirse y utilizarse sin conexión, incluso después de cerrarla y volver a iniciarla, siempre que sus recursos y datos necesarios se hayan descargado y guardado previamente en la tablet. La primera carga de la aplicación requerirá conexión. El arranque offline está implementado con un Service Worker (Serwist) que precarga el app-shell (`/`, `/sync`) y los assets, y sirve una pantalla de respaldo `/~offline` para rutas no visitadas. | El brief pide que los técnicos puedan trabajar sin preocuparse por la conectividad, pero no especifica cómo debe funcionar el primer acceso ni qué recursos deben estar disponibles para iniciar la aplicación sin señal. |
 
 ## 8. Resumen de decisiones de producto
 
@@ -99,6 +99,6 @@ Incluye únicamente supuestos relacionados con el funcionamiento y la experienci
 | **Sincronización** | El envío es automático al recuperar la conexión. Se realizan reintentos y también existe una opción de envío manual. |
 | **Errores** | Los fallos de envío, los rechazos del servidor y los trabajos inexistentes se muestran al técnico y ofrecen una acción adecuada. |
 | **Almacenamiento lleno** | La aplicación avisa al técnico y protege los datos del trabajo en curso. |
-| **Uso sin conexión** | La aplicación puede utilizarse sin conexión con la app ya cargada. El arranque offline completo queda pendiente de la Fase 10 (PWA/Service Worker). |
+| **Uso sin conexión** | Tras una primera carga con conexión, la aplicación puede abrirse, recargarse y navegar entre Today y Sync sin red gracias al Service Worker; las rutas no visitadas muestran `/~offline`. |
 
 ---
