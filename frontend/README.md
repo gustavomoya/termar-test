@@ -185,8 +185,9 @@ and navigate between **Today** and **Sync** without a connection.
    pending counter on the **Today** screen increases.
 5. Open **Sync**: you will see the waiting items, their size and attempts.
    **Try sending now** is disabled without signal.
-6. Turn off **Simulate no signal**. The queue is sent automatically and the
-   items move to **At the office**.
+6. Turn off **Simulate no signal**. The app confirms reachability with a real
+   request (and re-checks every 30 s), the indicator returns to **Online**, the
+   queue is sent automatically and the items move to **At the office**.
 7. Reload with signal to confirm the state persists.
 8. With the production build, stop the backend and reload again: the app shell
    still opens, **Today** and **Sync** remain reachable, and unvisited routes
