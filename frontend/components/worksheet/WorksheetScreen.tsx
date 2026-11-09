@@ -132,6 +132,12 @@ export function WorksheetScreen({ jobId }: WorksheetScreenProps) {
       />
 
       <main key={draft.jobId} className="flex-1 space-y-4 p-4 pb-28">
+        <TimerSection />
+        <ChecklistSection />
+        <PartsSection />
+        <PhotosSection />
+        <SignatureSection />
+
         {saveErrorMessage ? (
           <div
             role="alert"
@@ -154,12 +160,6 @@ export function WorksheetScreen({ jobId }: WorksheetScreenProps) {
             </ul>
           </div>
         )}
-
-        <TimerSection />
-        <ChecklistSection />
-        <PartsSection />
-        <PhotosSection />
-        <SignatureSection />
       </main>
       <WorksheetActionBar readOnly={readOnly} />
     </PageContainer>
