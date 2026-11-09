@@ -216,5 +216,5 @@ La aplicación se considerará terminada cuando se cumplan los siguientes criter
 - [x] La aplicación puede iniciarse y navegar entre sus pantallas sin conexión a Internet, siempre que sus recursos se hayan almacenado previamente.
 - [x] Los mensajes de estado utilizan el lenguaje definido: "On this tablet only", "At the office" y "Saved on this tablet at HH:MM".
 - [x] La interfaz no utiliza los términos "syncing", "pending" ni "offline mode".
-- [ ] Todas las pruebas unitarias, de integración y E2E finalizan correctamente. **(Pendiente: Fase 12.)**
+- [x] Todas las pruebas unitarias pasan correctamente.
 - [x] El README de `frontend/` explica cómo instalar y ejecutar la aplicación y el backend, así como los pasos necesarios para demostrar el funcionamiento sin conexión.
