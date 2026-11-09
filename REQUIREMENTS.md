@@ -65,14 +65,14 @@ Esta pantalla permitirá registrar toda la información correspondiente a un ser
 
 
 #### Fotos
-| ID         | Requisito                                                                                                                                                                                                                  |
-|------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **RF-23**  | Permitir subir fotografías.                                                                                                                                                                                                |
-| **RF-24**  | Comprimir las fotografías antes de almacenarlas y enviarlas, limitando su dimensión máxima. Si es necesario, aplicar compresión adicional para respetar el límite de tamaño de los envíos.                                 | 
-| **RF-25**  | Guardar las fotografías originales comprimidas en IndexedDB, utilizando el almacén `photos`.                                                                                                                               |
-| **RF-26**  | Mostrar las fotografías en una galería con un indicador que permita saber si están guardadas únicamente en la tableta o si ya fueron enviadas.                                                                             |
-| **RF-27**  | Permitir eliminar fotografías, eliminando tanto el archivo almacenado como sus datos asociados.                                                                                                                            | 
-| **RF-28** | Enviar las fotografías comprimidas en formato Base64 dentro de la petición `PUT /api/jobs/:id/worksheet`. Debido al límite de 10 MB del backend del ejercicio, se permitirá enviar un máximo de 4 fotografías por trabajo. |
+| ID          | Requisito                                                                                                                                                                                                                  |
+|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **RF-23**   | Permitir subir fotografías.                                                                                                                                                                                                |
+| **RF-24**   | Comprimir las fotografías antes de almacenarlas y enviarlas, limitando su dimensión máxima. Si es necesario, aplicar compresión adicional para respetar el límite de tamaño de los envíos.                                 | 
+| **RF-25**   | Guardar las fotografías originales comprimidas en IndexedDB, utilizando el almacén `photos`.                                                                                                                               |
+| **RF-26**   | Mostrar las fotografías en una galería con un indicador que permita saber si están guardadas únicamente en la tableta o si ya fueron enviadas.                                                                             |
+| **RF-27**   | Permitir eliminar fotografías, eliminando tanto el archivo almacenado como sus datos asociados.                                                                                                                            | 
+| **RF-28**   | Enviar las fotografías comprimidas en formato Base64 dentro de la petición `PUT /api/jobs/:id/worksheet`. Para no superar el límite de 10 MB del backend del ejercicio, se permitirá un máximo de 4 fotografías por trabajo, con un presupuesto aproximado de 1,5 MB por imagen y 8 MB en total (incluida la firma). |
 
 #### Firma
 | ID | Requisito |
@@ -86,7 +86,7 @@ Esta pantalla permitirá registrar toda la información correspondiente a un ser
 | ID | Requisito |
 |---|---|
 | **RF-33** | Permitir regresar a la pantalla Hoy mediante la opción "Back", sin perder la información registrada en la hoja de trabajo. |
-| **RF-34** | Al seleccionar "Finish job", validar que todos los campos obligatorios estén completos. Si la validación es correcta, marcar el trabajo como completado localmente y añadir la información necesaria a la cola de sincronización. |
+| **RF-34** | Al seleccionar "Finish job", validar los criterios mínimos de finalización: cronómetro iniciado y detenido, al menos una comprobación respondida, firma del cliente y nota en las comprobaciones no aptas o con mediciones fuera de rango. Si la validación es correcta, marcar el trabajo como completado localmente y añadir la información necesaria a la cola de sincronización. |
 
 
 ### 2.3 Pantalla Sincronización (`/sync`)
@@ -107,14 +107,14 @@ La aplicación deberá poder utilizarse sin conexión y conservar todos los camb
 
 | ID | Requisito |
 |---|---|
-| **RF-41** | Incluir un control "Simulate network" que permita activar o desactivar la conexión simulada durante las demostraciones de la aplicación. |
-| **RF-42** | Permitir consultar y completar los trabajos sin conexión a Internet, utilizando los datos y recursos previamente almacenados en la tableta. |
+| **RF-41** | Incluir un control "Simulate no signal" que permita activar o desactivar la conexión simulada durante las demostraciones de la aplicación. El control solo se mostrará cuando `NEXT_PUBLIC_DEMO_NETWORK=true`. |
+| **RF-42** | Permitir consultar y completar los trabajos sin conexión a Internet, utilizando los datos y recursos previamente almacenados en la tableta. Al cargar Hoy, la aplicación precargará en IndexedDB las plantillas de checklist y el stock de la furgoneta de los trabajos del día, de modo que un trabajo no abierto antes de perder la señal siga siendo completable. |
 | **RF-43** | Mantener una cola de salida (`outbox`) persistente en IndexedDB para almacenar las operaciones que todavía deben enviarse al backend. |
 | **RF-44** | Procesar los elementos de la cola de forma secuencial y sin bloquear la interfaz de usuario. |
-| **RF-45** | Reintentar automáticamente los envíos que fallen por problemas temporales de comunicación, utilizando un intervalo progresivo (backoff exponencial) entre 1 y 60 segundos y un número máximo de intentos. |
+| **RF-45** | Reintentar automáticamente los envíos que fallen por problemas temporales de comunicación, utilizando un intervalo progresivo (backoff exponencial) entre 1 y 60 segundos y un máximo de 7 intentos por operación. |
 | **RF-46** | Iniciar el proceso de sincronización al arrancar la aplicación, cuando se recupere la conexión, cuando el usuario solicite un envío manual y mediante un intervalo periódico. |
 | **RF-47** | Cuando el backend confirme correctamente el envío, actualizar el estado del trabajo a `synced` y reflejar que la información ha sido recibida por la oficina. |
-| **RF-48** | Detectar posibles cambios en la conexión utilizando `navigator.onLine` y realizar una comprobación periódica de disponibilidad del servidor (*heartbeat*) cada 30 segundos. La confirmación de que el backend está accesible deberá basarse en una petición real, no únicamente en el estado de red del dispositivo. |
+| **RF-48** | Detectar posibles cambios en la conexión utilizando `navigator.onLine` y realizar una comprobación periódica de disponibilidad del servidor (*heartbeat*) cada 30 segundos, pausada mientras la pestaña no está visible para no gastar batería. La confirmación de que el backend está accesible deberá basarse en una petición real, no únicamente en el estado de red del dispositivo. |
 
 ### 2.5 Gestión de conflictos
 La aplicación deberá detectar situaciones en las que dos técnicos hayan completado el mismo trabajo y permitir resolverlas sin perder información
@@ -177,11 +177,11 @@ Estos requisitos establecen las condiciones técnicas, de rendimiento, accesibil
 | **RNF-05** | **Ergonomía táctil:** utilizar controles con un tamaño mínimo de 48 × 48 píxeles y situar las acciones principales en una barra inferior accesible con el pulgar. |
 | **RNF-06** | **Mensajes de estado:** utilizar expresiones comprensibles para el técnico, como "On this tablet only", "At the office" y "Saved on this tablet at HH:MM". Evitar los términos "syncing", "pending" y "offline mode" en la interfaz. |
 | **RNF-07** | **Estados de sincronización:** diferenciar visualmente, mediante texto y color, los trabajos guardados únicamente en la tableta, los recibidos por la oficina y los que presentan un conflicto. |
-| **RNF-08** | **Separación entre trabajo y sincronización:** distinguir entre el estado del trabajo realizado por el técnico y el estado de recepción por parte de la oficina. Un trabajo puede estar completado localmente y todavía no haber sido enviado. |
+| **RNF-08** | **Separación entre trabajo y sincronización:** el modelo de datos distinguirá entre el estado del trabajo realizado por el técnico y el estado de recepción por parte de la oficina. Un trabajo puede estar completado localmente y todavía no haber sido enviado. La pantalla Hoy prioriza el estado de sincronización, que es el que el técnico necesita para saber si su trabajo está a salvo. |
 | **RNF-09** | **Gestión del tiempo:** utilizar la hora local del dispositivo para registrar las fechas y horas, respetando el formato esperado por el backend, que no incluye información de zona horaria. |
 | **RNF-10** | **Compatibilidad:** utilizar versiones recientes de Chrome y Android WebView. Verificar que los dispositivos de destino utilicen Chromium 111 o superior, necesario para Tailwind CSS v4. |
 | **RNF-11** | **Autenticación:** no implementar inicio de sesión, autenticación ni expiración de sesiones en esta versión, ya que el backend no proporciona estos servicios. |
-| **RNF-12** | **Pruebas:** implementar pruebas unitarias con Vitest para la lógica de datos y sincronización, pruebas de integración con React Testing Library para los componentes principales y pruebas E2E con Playwright para los escenarios de funcionamiento sin conexión, recuperación de conexión y resolución de conflictos. |
+| **RNF-12** | **Pruebas:** implementar pruebas unitarias con Vitest para la lógica de datos. |
 ---
 
 ## 4. Funcionalidades fuera del alcance
@@ -202,6 +202,20 @@ Las siguientes funcionalidades no se desarrollarán en esta versión de la aplic
 | **EX-10** | Consultar el historial de días anteriores. | La aplicación está limitada al día actual. |
 | **EX-11** | Configuración y personalización del usuario. | No forma parte de los requisitos del ejercicio. |
 | **EX-12** | Analítica. | No se ha solicitado esta funcionalidad. |
+
+### 4.1 Limitaciones conocidas y recortes deliberados
+
+Estas limitaciones no son errores: son decisiones tomadas para entregar un producto coherente dentro del tiempo disponible. Se documentan aquí para que la evaluación no las confunda con funcionalidad terminada.
+
+| ID | Limitación | Motivo y siguiente paso |
+|---|---|---|
+| **L-01** | Máximo de 4 fotografías por trabajo, frente a las ~12 que puede necesitar un trabajo complicado. | El backend del ejercicio solo permite enviar archivos en base64 dentro de `PUT /api/jobs/:id/worksheet`, con un límite de 10 MB. En producción se sustituiría por una subida binaria por fotografía y se eliminaría el límite. |
+| **L-02** | "Send both and let the office decide" conserva la hoja propia completa y los metadatos de la otra, pero no garantiza que ambas queden almacenadas en el backend. | `PUT /api/jobs/:id/worksheet` crea o reemplaza una única hoja por trabajo. La versión descartada se archiva localmente y la interfaz no afirma que la oficina la haya recibido. |
+| **L-03** | No hay pantalla para recuperar las hojas archivadas en `archive`. | El almacén y la escritura existen para no perder información. |
+| **L-04** | No se incluyen pruebas de integración con React Testing Library ni pruebas E2E con Playwright. | Se priorizó la implementación y las pruebas unitarias de datos y sincronización (44 pruebas con Vitest). |
+| **L-05** | El stock de la furgoneta se descuenta localmente, pero no se envía a la oficina. | El backend no expone un endpoint de actualización de stock. |
+| **L-06** | Para finalizar un trabajo no es obligatorio responder todas las comprobaciones: basta con una, además de la firma y el cronómetro detenido. | El brief no define el mínimo. Se eligió no bloquear al técnico, pero queda como pregunta abierta al cliente; exigir la checklist completa sería un cambio pequeño de validación. |
+
 ---
 
 ## 5. Criterios de Aceptación (Definition of Done)
@@ -211,10 +225,10 @@ La aplicación se considerará terminada cuando se cumplan los siguientes criter
 - [x] Un técnico puede completar los trabajos del día sin conexión a Internet, sin errores ni pérdida de información (con la aplicación ya cargada).
 - [x] Cuando se recupera la conexión, la aplicación envía automáticamente los datos almacenados en la tableta.
 - [x] Si se recarga o cierra la aplicación a mitad de un trabajo, se conservan el cronómetro, las comprobaciones, las piezas, las fotografías y la firma.
-- [x] Los conflictos entre técnicos pueden resolverse utilizando las tres opciones disponibles, sin sobrescribir ni eliminar información silenciosamente.
+- [x] Los conflictos entre técnicos pueden resolverse con las tres opciones disponibles sin sobrescribir ni eliminar información silenciosamente; la hoja descartada se archiva localmente y, en "Send both", la interfaz refleja las limitaciones del backend (L-02).
 - [x] Los errores de envío, las hojas rechazadas y los trabajos inexistentes se muestran claramente y permiten realizar las acciones correspondientes.
 - [x] La aplicación puede iniciarse y navegar entre sus pantallas sin conexión a Internet, siempre que sus recursos se hayan almacenado previamente.
 - [x] Los mensajes de estado utilizan el lenguaje definido: "On this tablet only", "At the office" y "Saved on this tablet at HH:MM".
 - [x] La interfaz no utiliza los términos "syncing", "pending" ni "offline mode".
-- [x] Todas las pruebas unitarias pasan correctamente.
+- [x] Las pruebas unitarias pasan con `npm test` (8 archivos, 44 pruebas). Las pruebas de integración y E2E quedan fuera de esta entrega (L-04).
 - [x] El README de `frontend/` explica cómo instalar y ejecutar la aplicación y el backend, así como los pasos necesarios para demostrar el funcionamiento sin conexión.
