@@ -392,24 +392,7 @@ async function resolveWorksheetDraft(
   templateItems: ChecklistTemplate["items"],
 ): Promise<{ draft: WorksheetDraft; savedAt?: string }> {
   if (localDraft) {
-    // A draft saved before the photos feature (or before the office sent the
-    // photos) must still show the photos that already exist on the backend
-    const localIds = new Set(localDraft.photos.map((photo) => photo.id));
-    const missingPhotos = (remoteWorksheet?.photos ?? [])
-      .filter((photo) => !localIds.has(photo.id))
-      .map(mapRemotePhoto);
-
-    if (missingPhotos.length === 0) {
-      return { draft: localDraft, savedAt: localDraft.updatedAt };
-    }
-
-    return {
-      draft: {
-        ...localDraft,
-        photos: [...localDraft.photos, ...missingPhotos],
-      },
-      savedAt: localDraft.updatedAt,
-    };
+    return { draft: localDraft, savedAt: localDraft.updatedAt };
   }
 
   if (remoteWorksheet) {
